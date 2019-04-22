@@ -43,18 +43,15 @@ include_directories(src ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 find_package(LibUSB)
 
+set(CURSES_NEED_NCURSES true)
+find_package(Curses REQUIRED)
+include_directories(${CURSES_INCLUDE_DIR})
+
 # Compile sources
-
-#
-# imported libraries
-#
-add_library(ncurses SHARED IMPORTED)
-set_target_properties(ncurses PROPERTIES IMPORTED_LOCATION /usr/lib/libncurses.so)
-
-add_executable(blusb src/blusb.c src/configure_layout.c) 
+add_executable(blusb src/blusb.c src/usb.c src/layout.c src/configure_layout.c)
 target_include_directories(blusb PUBLIC ${LIBUSB_1_INCLUDE_DIRS})
-target_link_libraries(blusb ${LIBUSB_1_LIBRARIES} ncurses)
-target_compile_options(blusb PUBLIC ${LIBUSB_CFLAGS_OTHER} -g)
+target_link_libraries(blusb ${LIBUSB_1_LIBRARIES} ${CURSES_LIBRARY})
+target_compile_options(blusb PUBLIC ${LIBUSB_CFLAGS_OTHER} -g -pedantic -Wall)
 
 if(BUILD_TESTS)
 	add_subdirectory(tests)
