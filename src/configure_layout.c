@@ -40,32 +40,7 @@
 #include "blusb.h"
 #include "layout.h"
 #include "vkeycodes.h"
-
-#define USB_ENABLE_VENDOR_RQ	0x11
-#define USB_DISABLE_VENDOR_RQ	0x10
-#define USB_READ_BR				0x20
-#define USB_WRITE_BR			0x21
-
-#define USB_READ_MATRIX			0x30
-#define USB_READ_LAYOUT			0x40
-#define USB_WRITE_LAYOUT		0x41
-#define USB_READ_DEBOUNCE		0x50
-#define USB_WRITE_DEBOUNCE		0x51
-#define USB_READ_MACROS			0x60
-#define USB_WRITE_MACROS		0x61
-#define USB_READ_VERSION		0x70
-
-#define USB_TIMEOUT 1000
-
-#ifndef _WIN32
-
-uint8_t
-read_nr_of_Layers() {
-    uint8_t nrlayers = 1;
-    uint8_t has_read = FALSE;
-
-    return nrlayers;
-}
+#include "usb.h"
 
 typedef struct key_mapping_struct {
     uint8_t vk;
@@ -73,7 +48,7 @@ typedef struct key_mapping_struct {
     uint16_t hid;
 } key_mapping_t;
 
-key_mapping_t key_mapping[] = {
+key_mapping_t bl_key_mapping[] = {
     { VK_ESCAPE, "ESC", KB_ESC },
     { VK_F1, "F1", KB_F1 },
     { VK_F2, "F2", KB_F2 },
@@ -89,7 +64,7 @@ key_mapping_t key_mapping[] = {
     { VK_F12, "F12", KB_F12 },
     { VK_SNAPSHOT, "Print Screen", KB_PSCRN },
     { VK_SCROLL, "Scroll Lock", KB_SCRLK },
-    { VK_OEM_5, "OEM_5", KB_TILDE },
+    { VK_OEM_5, "Tilde", KB_TILDE },
     { VK_KEY_1, "KB 1", KB_1 },
     { VK_KEY_2, "KB 2", KB_2 },
     { VK_KEY_3, "KB 3", KB_3 },
@@ -100,8 +75,8 @@ key_mapping_t key_mapping[] = {
     { VK_KEY_8, "KB 8", KB_8 },
     { VK_KEY_9, "KB 9", KB_9 },
     { VK_KEY_0, "KB 0", KB_0 },
-    { VK_OEM_4, "OEM_4", KB_MINUS },
-    { VK_OEM_6, "OEM_6", KB_EQUAL },
+    { VK_OEM_4, "Minus", KB_MINUS },
+    { VK_OEM_6, "Equals", KB_EQUAL },
     { VK_BACK, "Backspace", KB_BKSPC },
     { VK_INSERT, "Insert", KB_INS },
     { VK_HOME, "Home", KB_HOME },
@@ -133,9 +108,9 @@ key_mapping_t key_mapping[] = {
     { VK_KEY_J, "J", KB_J },
     { VK_KEY_K, "K", KB_K },
     { VK_KEY_L, "L", KB_L },
-    { VK_OEM_3, "OEM_3", KB_SMCLN },
-    { VK_OEM_7, "OEM_7", KB_QUOTE },
-    { VK_OEM_2, "OEM_2", KB_BSLSH },
+    { VK_OEM_3, "Semicolon", KB_SMCLN },
+    { VK_OEM_7, "Quote", KB_QUOTE },
+    { VK_OEM_2, "Backslash", KB_BSLSH },
     { VK_LSHIFT, "Left Shift", KB_LSHFT },
     { VK_OEM_102, "OEM_102", KB_PIPE },
     { VK_KEY_Y, "Y", KB_Y },
@@ -145,9 +120,9 @@ key_mapping_t key_mapping[] = {
     { VK_KEY_B, "B", KB_B },
     { VK_KEY_N, "N", KB_N },
     { VK_KEY_M, "M", KB_M },
-    { VK_OEM_COMMA, "OEM_COMMA", KB_COMMA },
-    { VK_OEM_PERIOD, "OEM_PERIOD", KB_DOT },
-    { VK_OEM_MINUS, "OEM_MINUS", KB_SLASH },
+    { VK_OEM_COMMA, "Comma", KB_COMMA },
+    { VK_OEM_PERIOD, "Period", KB_DOT },
+    { VK_OEM_MINUS, "Slash", KB_SLASH },
     { VK_RSHIFT, "Right Shift", KB_RSHFT },
     { VK_UP, "Up Arrow", KB_UP },
     { VK_LCONTROL, "Left Ctrl", KB_LCTRL },
@@ -177,18 +152,18 @@ key_mapping_t key_mapping[] = {
     { VK_NUMPAD7, "NP_7", KP_7 },
     { VK_NUMPAD8, "NP_8", KP_8 },
     { VK_NUMPAD9, "NP_9", KP_9 },
-    { VK_DECIMAL, "NP_Dot", KP_DOT }
+    { VK_DECIMAL, "NP_Dot", KP_DOT },
+    { VK_RETURN, "NP_Enter", KP_ENTER }
 };
-
-extern libusb_device_handle *handle;
+static int n_key_mappings = sizeof(bl_key_mapping) / sizeof(key_mapping_t);
 
 void
-exit_tui() {
+bl_tui_exit() {
     endwin();
 }
 
 int
-init_tui() {
+bl_tui_init() {
     initscr();
     raw();
     keypad(stdscr, TRUE);
@@ -203,9 +178,9 @@ init_tui() {
 
     int x, y;
     getmaxyx(stdscr, y, x);
-    if (x < 80 || y < 25) {
-        exit_tui();
-        printf("The terminal must be at least 80 columns by 25 rows\n");
+    if (x < 80 || y < 24) {
+        bl_tui_exit();
+        printf("The terminal must be at least 80 columns by 24 rows\n");
         printf("The reported size is: columns: %d, rows: %d\n", x, y);
         return FALSE;
     }
@@ -213,25 +188,32 @@ init_tui() {
     return TRUE;
 }
 
-void
-errmsg_and_abort(char *msg) {
-    printf("Error allocating memory for: %s\n", msg);
-    exit(1);
-}
+#define errmsg_and_abort(...) do { \
+    bl_tui_exit(); \
+    printf ("@ %s (%d): ", __FILE__, __LINE__); \
+    printf (__VA_ARGS__); \
+    printf("\n"); \
+    exit(1); \
+} while (0)
 
 #define SELECT_BOX_WIDTH 8
+
+typedef struct select_box_value_t {
+    char *label;
+    void *data;
+} select_box_value_t;
 
 typedef struct select_box_t {
     int n;
     int selected_item_index;
     int width;
-    char **items;
+    select_box_value_t *items;
 } select_box_t;
 
+typedef select_box_t bl_matrix_ui_t[NUMLAYERS_MAX][NUMROWS][NUMCOLS];
 
 select_box_t *
-create_select_box(char **items, int n, int width) {
-    select_box_t *sb = (select_box_t *) malloc(sizeof(select_box_t));
+init_select_box(select_box_t *sb, select_box_value_t *items, int n, int width) {
     if (sb == NULL) {
         errmsg_and_abort("select_box");
     } else {
@@ -254,24 +236,26 @@ create_select_box(char **items, int n, int width) {
  */
 void
 draw_select_box(select_box_t *sb, int x, int y, int inversed) {
-    char *selected_item = NULL;
+    select_box_value_t *selected_item = NULL;
 
     if (sb->selected_item_index < sb->n) {
-        selected_item = sb->items[sb->selected_item_index];
+        selected_item = &sb->items[sb->selected_item_index];
     } else {
-        errmsg_and_abort("selected index out of range");
+        errmsg_and_abort("selected index out of range: %d", sb->selected_item_index);
     }
+
+    char *template = (char*) malloc(20 + strlen(selected_item->label));
+    sprintf(template, "%%.%ds", SELECT_BOX_WIDTH);
 
     if (inversed) {
         wattron(stdscr, A_REVERSE);
     }
-    char *template = (char*) malloc(20);
-    sprintf(template, "%%.%ds", SELECT_BOX_WIDTH);
-    mvwprintw(stdscr, y, x, template, selected_item);
-    free(template);
+    mvwprintw(stdscr, y, x, template, selected_item->label);
     if (inversed) {
         wattroff(stdscr, A_REVERSE);
     }
+
+    free(template);
 }
 
 /*
@@ -281,6 +265,42 @@ draw_select_box(select_box_t *sb, int x, int y, int inversed) {
 void
 draw_matrix_cell(select_box_t *sb, int x, int y, int inversed) {
     draw_select_box(sb, y*(SELECT_BOX_WIDTH+1)+4, x+4, inversed);
+}
+
+/**
+ * Find the key mapping for the key in the matrix and return the index value. If
+ * the item is not found return 0.
+ */
+int
+bl_layout_get_selected_item(int layer, int row, int col,
+			    bl_layout_t *layout, select_box_value_t *bl_key_mapping_items, int n_items) {
+  for (int i=0; i<n_items; i++) {
+    if (*((uint16_t *)bl_key_mapping_items[i].data) == layout->matrix[layer][row][col]) {
+      return i;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Initialize the matrix with select boxes.
+ */
+void
+bl_layout_init_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout,
+		      select_box_value_t *bl_key_mapping_items, int n_items) {
+    /*
+     * Create list boxes for each cell.
+     */
+    for (int layer=0; layer<NUMLAYERS_MAX; layer++) {
+        for (int r=0; r<NUMROWS; r++) {
+            for (int c=0; c<NUMCOLS; c++) {
+                select_box_t *sb = &matrix[layer][r][c];
+                init_select_box(sb, bl_key_mapping_items, n_items, SELECT_BOX_WIDTH);
+                sb->selected_item_index = bl_layout_get_selected_item(layer, r, c, layout,
+								      bl_key_mapping_items, n_items);
+            }
+        }
+    }
 }
 
 /*
@@ -300,28 +320,9 @@ draw_matrix_cell(select_box_t *sb, int x, int y, int inversed) {
  * .
  * C8
  */
-select_box_t ***
-drawKeyboardMatrix() {
-    select_box_t ***matrix;
-
-    /*
-     * Allocate matrix
-     */
-    matrix = (select_box_t ***) malloc(NUMCOLS * sizeof(select_box_t **));
-    for (int c=0; c<NUMCOLS; c++) {
-        matrix[c] = (select_box_t **) malloc(NUMROWS * sizeof(select_box_t *));
-    }
-
-    /*
-     * Create list boxes in each cell.
-     */
-    for (int c=0; c<NUMCOLS; c++) {
-        for (int r=0; r<NUMROWS; r++) {
-            char *items[] = { "first", "second" };
-            matrix[c][r] = create_select_box(items, 2, SELECT_BOX_WIDTH);
-        }
-    }
-
+void
+bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix) {
+    
     /*
      * Draw column headers (vertically)
      */
@@ -345,89 +346,228 @@ drawKeyboardMatrix() {
      */
     for (int c=0; c<NUMCOLS; c++) {
         for (int r=0; r<NUMROWS; r++) {
-            draw_matrix_cell(matrix[c][r], c, r, FALSE);
+            draw_matrix_cell(&matrix[0][r][c], c, r, FALSE);
         }
     }
-
-    return matrix;
 }
 
 void
-navigateMatrix(select_box_t ***matrix) {
-    int x = 0;
-    int y = 0;
-    int x_last = 0;
-    int y_last = 0;
+bl_layout_select_box_redraw_list(WINDOW *win, select_box_t *sb, 
+                                 int cursor_i, int item_start, int item_end) {
+//    mvprintw(1, 0, "cursor_i=%d, item_start=%d, item_end=%d", 
+//            cursor_i, item_start, item_end);
+    werase(win);
+    box(win, 0, 0);
+    for (int i=item_start; i<item_end; i++) {
+        if (i == cursor_i) {
+            wattron(win, A_REVERSE);
+            mvwprintw(win, i-item_start+1, 1, "%s", sb->items[i].label);
+            wattroff(win, A_REVERSE);
+        } else {
+            mvwprintw(win, i-item_start+1, 1, "%s", sb->items[i].label);
+        }
+    }
+    wrefresh(win);
+}
+
+/*
+ * Show a popup at the given coordinates and select a value from the 
+ * select box using the arrow keys and enter key.
+ */
+int
+bl_layout_select_box(select_box_t *sb, int y, int x) {
+    int maxx, maxy;
+    
+    /*
+     * Draw a popup box in the middle of the screen.
+     */
+    getmaxyx(stdscr, maxy, maxx);
+    int w = 15;
+    int h = maxy / 2 - 3;
+
+    if (y > maxy / 2) {
+        y = y - h ;
+    } else {
+        y = y + 1;
+    }
+    WINDOW *win = newwin(h, w, y, x);
+    box(win, 0, 0);
+    touchwin(win);
+    wrefresh(win);
+
+    /*
+     * The cursor in the select box always points to an element sb->items
+     *   cursor_i
+     * The list of items displayed in the select box has a starting point:
+     *   item_start
+     * and an end point
+     *   item_end
+     * 
+     * The following must remain invariant:
+     * 
+     * 0 <= elt_start <= cursor_i <= elt_end <= n_items-1
+     * &&
+     * elt_end - elt_start <= h
+     */
+    /*
+     * substract top and bottom line of box
+     */
+    int n_items = h - 2;
+    int old_selected_item_index = sb->selected_item_index;
+    int cursor_i = 0;
+    int item_start = 0;
+    int item_end = sb->n > n_items ? n_items : sb->n;
+    int ch = getch();
+    int last_ch = ch;
+    int selecting = TRUE;
+    bl_layout_select_box_redraw_list(win, sb, cursor_i, item_start, item_end);
+    while (selecting) {
+        ch = getch();
+        if (ch != last_ch) {
+            if (ch == 27 /* ESC */) {
+                sb->selected_item_index = old_selected_item_index;
+                selecting = FALSE;
+            } else if (ch == 10 /* ENTER */) {
+                selecting = FALSE;
+            } else if (ch == KEY_UP && cursor_i > 0) {
+                cursor_i--;
+                if (cursor_i < item_start) {
+                    item_start--;
+                    item_end--;
+                }
+            } else if (ch == KEY_DOWN && cursor_i < sb->n - 1) {
+                cursor_i++;
+                if (cursor_i >= item_end) {
+                    item_start++;
+                    item_end++;
+                }
+            } else if (ch == KEY_NPAGE && cursor_i < sb->n - 1) {
+                cursor_i = MIN(cursor_i + n_items, sb->n - 1);
+                item_start = MAX(0, MIN(item_start + n_items, sb->n - 1 - n_items));
+                item_end = MIN(item_end + n_items, sb->n - 1 - n_items);
+            }
+                
+            last_ch = ch;
+            bl_layout_select_box_redraw_list(win, sb, cursor_i, item_start, item_end);
+        }
+        usleep(50);
+    }
+    delwin(win);
+    return 0;
+}
+
+void
+bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout) {
+    int col = 0;
+    int row = 0;
+    int col_last = 0;
+    int row_last = 0;
+    int layer = 0;
 
     int ch = getch();
-    draw_matrix_cell(matrix[x][y], y, x, TRUE);
-    uint16_t rowcol_last = 0;
+    int last_ch = ch;
+    draw_matrix_cell(&matrix[layer][col][row], col, row, TRUE);
     while (ch != KEY_F(12)) {
-        uint16_t rowcol = read_matrix_pos();
-        if (rowcol != 0xffff && rowcol != rowcol_last) {
-            uint16_t row = rowcol & 0x0f;	// decipher with bitmask and assign value
-            uint16_t col = (rowcol & 0xff00) / 256;
-            rowcol_last = rowcol;
-            x = col;
-            y = row;
+        /*
+         * See if key was pressed on the IBM model m keyboard and get
+         * its position if so.
+         */
+        int m_row, m_col;
+        if (bl_usb_read_matrix_pos(&m_row, &m_col)) {
+            col = m_col;
+            row = m_row;
         }
-        refresh();
+        /*
+         * Check the key presses on the alternate keyboard
+         */
         ch = getch();
-        if (ch == KEY_DOWN && x < NUMCOLS-1) {
-            x++;
-        } else if (ch == KEY_UP && x > 0) {
-            x--;
-        } else if (ch == KEY_RIGHT && y < NUMROWS-1) {
-            y++;
-        } else if (ch == KEY_LEFT && y > 0) {
-            y--;
-        } else if (ch == KEY_ENTER) {
-            // popup select box
+        if (ch == KEY_DOWN && col < NUMCOLS-1) {
+            col++;
+        } else if (ch == KEY_UP && col > 0) {
+            col--;
+        } else if (ch == KEY_RIGHT && row < NUMROWS-1) {
+            row++;
+        } else if (ch == KEY_LEFT && row > 0) {
+            row--;
+        } else if (ch == '\n') {
+            select_box_t *sb = &matrix[layer][row][col];
+            int i = bl_layout_select_box(sb, col + 4, row  * (SELECT_BOX_WIDTH + 1) + 4);
+            layout->matrix[layer][row][col] = *((uint16_t*) sb->items[sb->selected_item_index].data);
+            redrawwin(stdscr);
+        } else {
+            if (ch != last_ch) {
+                mvprintw(0, 1, "key=%d", ch);
+                last_ch = ch;
+            }
         }
-        if (x != x_last || y != y_last) {
-            draw_matrix_cell(matrix[x_last][y_last], x_last, y_last, FALSE);
-            draw_matrix_cell(matrix[x][y], x, y, TRUE);
-            x_last = x;
-            y_last = y;
+        if (row != row_last || col != col_last) {
+            draw_matrix_cell(&matrix[layer][row_last][col_last], col_last, row_last, FALSE);
+            draw_matrix_cell(&matrix[layer][row][col], col, row, TRUE);
+            col_last = col;
+            row_last = row;
         }
-        mvprintw(0, 0, "col: %d, row: %d  ", x, y);
+        mvprintw(0, 0, "col: %d, row: %d, val: %u  ", col, row, layout->matrix[layer][row][col]);
         refresh();
-        usleep(10);
+        // don't hog the cpu too much
+        usleep(50);
     }
 }
 
 
+/**
+ * Read the existing keyboard layout and return it.
+ * 
+ * @param layout A bl_layout_t variable which will be initialised with the values 
+ *               for the current layout.
+ */
 void
-mb_read_layout(uint16_t ***kbd_layout, uint8_t *nlayers) {
-    char buffer[NUMLAYERS_MAX * NUMROWS * NUMCOLS + 1];
-
-    libusb_control_transfer(handle, LIBUSB_RECIPIENT_ENDPOINT | LIBUSB_ENDPOINT_IN |
-        LIBUSB_REQUEST_TYPE_VENDOR, USB_READ_LAYOUT, 0, 0, buffer, sizeof(buffer), USB_TIMEOUT);
-
-    *nlayers = buffer[0];
-    if (*nlayers == 0) {
-        return;
-    } else {
-        for (int layer=0; layer<*nlayers; layer++) {
+bl_layout_read(bl_layout_t *layout) {
+    unsigned char *buffer;
+    int nlayers;
+    
+    bl_usb_read_layout(&buffer, &nlayers);
+    layout->nlayers = nlayers;
+    for (int layer=0; layer<nlayers; layer++) {
+        for (int row=0; row<NUMROWS; row++) {
             for (int col=0; col<NUMCOLS; col++) {
-                for (int row=0; row<NUMROWS; row++) {
-                    kbd_layout[layer][col][row] = *((uint16_t *)buffer + 1 + col + row * NUMCOLS);
-                }
+                int n = layer * NUMROWS * NUMCOLS + row * NUMCOLS + col;
+                layout->matrix[layer][row][col] = ((uint16_t *) buffer)[n];
             }
         }
     }
+
+    return;
 }
 
 void
-configure_layout(uint8_t nlayers, char *p_layout_array_keyfile) {
+bl_layout_configure(uint8_t nlayers, char *p_layout_array_keyfile) {
 
-    uint16_t kbd_layout[NUMLAYERS_MAX][NUMCOLS][NUMROWS];
-    if (init_tui()) {
-        //mb_read_layout(kbd_layout, 1);
-        select_box_t ***matrix = drawKeyboardMatrix(kbd_layout);
-        navigateMatrix(matrix);
-        exit_tui();
+    bl_layout_t layout;
+    select_box_value_t bl_key_mapping_items[n_key_mappings + 1];
+    static int not_selected_value = 0;
+    
+    /*
+     * Construct the select box list for every select box in the 
+     * matrix from the list of keycodes. 
+     *
+     * The select box is read only and will be shared.
+     *
+     * The first entry is for the case the mapping has (yet) been
+     * defined.
+     */
+    bl_key_mapping_items[0].label = strdup("--");
+    bl_key_mapping_items[0].data = &not_selected_value;
+    for (int i=0; i<n_key_mappings; i++) {
+      bl_key_mapping_items[i+1].label = bl_key_mapping[i].name;
+      bl_key_mapping_items[i+1].data = &bl_key_mapping[i].hid;
+    }
+    
+    if (bl_tui_init()) {
+        bl_matrix_ui_t matrix;
+        bl_layout_read(&layout);
+        bl_layout_init_matrix(matrix, &layout, bl_key_mapping_items, n_key_mappings+1);
+        bl_layout_draw_keyboard_matrix(matrix);
+        bl_layout_navigate_matrix(matrix, &layout);
+        bl_tui_exit();
     }
 }
-
-#endif

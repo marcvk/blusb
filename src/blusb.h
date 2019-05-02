@@ -32,12 +32,43 @@
 
 #include <stdint.h>
 
+#define BL_SOFTWARE_VERSION "1.0"
+
 #ifndef FALSE
 #define FALSE 0
 #endif
 #ifndef TRUE
 #define TRUE 1
 #endif
+
+#ifndef MAX
+#define MAX(a, b) (a < b ? b : a)
+#endif
+#ifndef MIN
+#define MIN(a, b) (a < b ? a : b)
+#endif
+
+/*
+ * Custom USB commands
+ */
+#define USB_ENABLE_VENDOR_RQ	0x11
+#define USB_DISABLE_VENDOR_RQ	0x10
+#define USB_READ_BR				0x20
+#define USB_WRITE_BR			0x21
+
+#define USB_READ_MATRIX			0x30
+#define USB_READ_LAYOUT			0x40
+#define USB_WRITE_LAYOUT		0x41
+#define USB_READ_DEBOUNCE		0x50
+#define USB_WRITE_DEBOUNCE		0x51
+#define USB_READ_MACROS			0x60
+#define USB_WRITE_MACROS		0x61
+#define USB_READ_VERSION		0x70
+
+/*
+ * timeout in ms
+ */
+#define BL_USB_TIMEOUT 1000
 
 /************************************************************************/
 /*                        Function prototypes                           */
