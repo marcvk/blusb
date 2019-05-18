@@ -11,9 +11,7 @@
  */
 void
 bl_ui() {
-    bl_usb_enable_service_mode();
     bl_layout_configure(0, NULL);
-    bl_usb_disable_service_mode();
 }
 
 /*
@@ -24,7 +22,7 @@ bl_read_layout() {
     unsigned char *buffer;
     int nlayers;
     bl_usb_read_layout(&buffer, &nlayers);
-    bl_usb_raw_print_layout((uint16_t *)buffer, nlayers);
+    bl_usb_raw_print_layout((uint16_t *)buffer, nlayers, stdout);
     free(buffer);
 }
 
@@ -48,10 +46,10 @@ bl_write_layout(char *fname) {
 /*
  * Read the current USB en BT, used to set the
  * brightness of the LEDs.
- * 
+ *
  * The PWM stands for Pulse Width Modulation,
- * a technique used in digital controllers 
- * to dimm an LED. 
+ * a technique used in digital controllers
+ * to dimm an LED.
  */
 void
 bl_read_pwm() {

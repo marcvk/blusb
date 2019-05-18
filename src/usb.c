@@ -104,6 +104,30 @@ bl_usb_disable_service_mode() {
         LIBUSB_REQUEST_TYPE_VENDOR, USB_DISABLE_VENDOR_RQ, 0, 0, 0, 0, 1000);
 }
 
+void
+bl_usb_read_matrix_pos_raw(int *row, int *col) {
+    static uint8_t buffer[8] = { 0 };
+
+    libusb_control_transfer(handle, LIBUSB_RECIPIENT_INTERFACE | LIBUSB_ENDPOINT_IN |
+        LIBUSB_REQUEST_TYPE_VENDOR, USB_READ_MATRIX, 0, 0, buffer, sizeof(buffer), 1000);
+
+    *row = buffer[0];
+    *col = buffer[1];
+
+    return;
+}
+
+void
+bl_usb_enable_service_mode_safe() {
+    bl_usb_enable_service_mode();
+    int row = -1;
+    int col = -1;
+    while (row != 0 && col != 0) {
+        bl_usb_read_matrix_pos_raw(&row, &col);
+    }
+    bl_usb_disable_service_mode();
+    bl_usb_enable_service_mode();
+}
 
 /**
  * Read the matrix position of the last key pressed, returns TRUE and sets
@@ -146,10 +170,9 @@ bl_usb_read_matrix_pos(int *row, int *col)
     }
 }
 
-
 /**
  * Read the layout from the controller, return the raw data. The raw data consists of 16 bit
- * numbers, length of data returned is nlayers * 2 bytes * NUMCOLS * NUMROWS, order 
+ * numbers, length of data returned is nlayers * 2 bytes * NUMCOLS * NUMROWS, order
  * is little endian.
  *
  * FIXME How much data does the call return? Is it max 2048 bytes (that's what was in the
@@ -203,16 +226,23 @@ bl_usb_write_layout(uint8_t *layout, int nlayers) {
     return TRUE;
 }
 
+/**
+ * Print machine parseable output to the given file stream.
+ *
+ * @param buffer Buffer containing the configuration
+ * @param nlayers Number of layers
+ * @param f File stream to write to
+ */
 void
-bl_usb_raw_print_layout(uint16_t *buffer, int nlayers) {
+bl_usb_raw_print_layout(uint16_t *buffer, int nlayers, FILE *f) {
     for (int layer=0; layer<nlayers; layer++) {
         for (int row=0; row<NUMROWS; row++) {
             for (int col=0; col<NUMCOLS; col++) {
                 int index = layer * NUMROWS * NUMCOLS + row * NUMCOLS + col;
                 if (col == NUMCOLS - 1 && row == NUMROWS - 1) {
-                    printf("%u\n", buffer[index]);
+                    fprintf(f, "%u\n", buffer[index]);
                 } else {
-                    printf("%u, ", buffer[index]);
+                    fprintf(f, "%u, ", buffer[index]);
                 }
             }
         }
@@ -335,21 +365,21 @@ bl_usb_macro_read() {
         exit(0);
     }
 
-	printf("Macro key table\n\n");
-	printf("            Mods%-3cRsvd%-3cKey1%-3cKey2%-3cKey3%-3cKey4%-3cKey5%-3cKey6\n\n", '\0', '\0', '\0', '\0', '\0', '\0', '\0');
-	printf("Macro %-6u", ++macro_cnt);
+    printf("Macro key table\n\n");
+    printf("            Mods%-3cRsvd%-3cKey1%-3cKey2%-3cKey3%-3cKey4%-3cKey5%-3cKey6\n\n", '\0', '\0', '\0', '\0', '\0', '\0', '\0');
+    printf("Macro %-6u", ++macro_cnt);
 
-	for (uint8_t i = 0; i < sizeof(char_ctr_buf); i++)
-	{
-		printf("%-7u", char_ctr_buf[i]);
-		if(i && i != sizeof(char_ctr_buf) - 1)
-			if ((i + 1) % 8 == 0)
-			{
-				printf("\n");
-				printf("Macro %-6u", ++macro_cnt);
-			}
-	}
+    for (uint8_t i = 0; i < sizeof(char_ctr_buf); i++)
+    {
+        printf("%-7u", char_ctr_buf[i]);
+        if(i && i != sizeof(char_ctr_buf) - 1)
+            if ((i + 1) % 8 == 0)
+            {
+                printf("\n");
+                printf("Macro %-6u", ++macro_cnt);
+            }
+    }
 
-	return NULL;
+    return NULL;
 }
 

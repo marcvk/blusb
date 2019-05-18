@@ -20,16 +20,18 @@ typedef struct bl_macro_t {
 int bl_usb_openctrl();
 void bl_usb_closectrl();
 void bl_usb_enable_service_mode();
+void bl_usb_enable_service_mode_safe();
 void bl_usb_disable_service_mode();
 int bl_usb_read_matrix_pos(int *, int *);
 int bl_usb_read_layout(uint8_t **, int *);
 int bl_usb_write_layout(uint8_t *, int);
-void bl_usb_raw_print_layout(uint16_t *, int);
+void bl_usb_raw_print_layout(uint16_t *, int, FILE *);
 void bl_usb_print_layout(uint8_t *, int);
 
 void bl_layout_configure(uint8_t, char *);
 int bl_layout_write(char *);
 void bl_layout_print(bl_layout_t *);
+int bl_layout_save(bl_layout_t *, char *);
 
 void bl_usb_read_version(int *, int *);
 

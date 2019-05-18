@@ -8,19 +8,19 @@
 #include "usb.h"
 
 /**
- * Layout is a type for an object that represents the keyboard layout in 
+ * Layout is a type for an object that represents the keyboard layout in
  * up to 6 different layers.
  */
 
 /**
- * Convert the layout matrix to a sequential byte array that can be used 
- * by the bl_usb api. The data actually contains 16 bit numbers, so every two 
- * bytes make up a number in little endian order. The first two bytes in the 
- * array represent the number of layers, the rest of the data are the layers, 
- * and for every layer, row per row.
+ * Convert the layout matrix to a sequential byte array that can be used
+ * by the bl_usb api. The data actually contains 16 bit numbers, so every two
+ * bytes make up a number in little endian order. The first two bytes in the
+ * array represent the number of layers, the rest of the data are the layers,
+ * and for every layer, row per row the columns.
  *
  * @param layout The layout struct from which to get the matrix data.
- * @return Newly allocated array of bytes representing the matrix data, must  
+ * @return Newly allocated array of bytes representing the matrix data, must
  *         be freed after use.
  */
 uint8_t *
@@ -31,7 +31,7 @@ bl_layout_convert(bl_layout_t *layout) {
     for (int layer=0; layer<layout->nlayers; layer++) {
         for (int row=0; row<NUMROWS; row++) {
             for (int col=0; col<NUMCOLS; col++) {
-                int n = layer * NUMROWS * NUMCOLS + 
+                int n = layer * NUMROWS * NUMCOLS +
                     row * NUMCOLS +
                     col;
                 ((uint16_t *)data)[n] = layout->matrix[layer][row][col];
@@ -202,5 +202,22 @@ bl_layout_write(char *fname) {
 
     bl_usb_write_layout(data, layout->nlayers);
 
+    free(layout);
+    free(data);
+
     return 0;
 }
+
+int
+bl_layout_save(bl_layout_t *layout, char *fname) {
+    FILE *f = fopen(fname, "w");
+    if (f == NULL) {
+        return -1;
+    }
+    uint8_t *buffer = bl_layout_convert(layout);
+    bl_usb_raw_print_layout((uint16_t *)buffer, layout->nlayers, f);
+    fclose(f);
+
+    return 0;
+}
+
