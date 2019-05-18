@@ -19,3 +19,6 @@ CMakeLists.txt.user
 CMakeSettings.json
 .kdev4
 mblusb.kdev4
+
+# gdb
+.gdb_history
