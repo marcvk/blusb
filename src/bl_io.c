@@ -27,56 +27,55 @@
  * SUCH DAMAGE. *
  */
 
-#include "layout.h"
+#include "bl_io.h"
 
-#ifndef __USB_H_
-#define __USB_H_
+bl_io_dir_t *
+bl_io_read_directoy(char *dname) {
+    DIR *dir;
 
-typedef uint16_t bl_matrix_t[NUMLAYERS_MAX][NUMROWS][NUMCOLS];
+    dir = opendir(dname);
+    if (dir == NULL) {
+        errmsg_and_abort("Can't open directory: %s", dname);
+        return NULL;
+    }
+    /*
+     * Get nr of dir entries
+     */
+    bl_io_dir_t *io_dir = (bl_io_dir_t *) malloc(sizeof(bl_io_dir_t));
+    io_dir->n = 0;
+    while (readdir(dir) != NULL) {
+        io_dir->n++;
+    }
+    rewinddir(dir);
 
-typedef struct bl_layout_t {
-    int nlayers;
-    bl_matrix_t matrix;
-} bl_layout_t;
+    /*
+     * Allocate and read all entries
+     */
+    io_dir->dirs = (bl_io_dirent_t *) malloc( io_dir->n * sizeof(bl_io_dirent_t) );
+    for (int i=0; i<io_dir->n; i++) {
+        struct dirent *dire = readdir(dir);
+        io_dir->dirs[i].name = strdup(dire->d_name);
+        lstat(io_dir->dirs[i].name, &io_dir->dirs[i].fstatus);
+    }
+    closedir(dir);
 
-typedef uint16_t bl_macro_keylist_t[NUM_MACROKEYS][LEN_MACRO];
+    return io_dir;
+}
 
-typedef struct bl_macro_t {
-    int nmacros;
-    bl_macro_keylist_t macros;
-} bl_macro_t;
+void
+bl_io_dir_destroy(bl_io_dir_t *dir) {
+    for (int i=0; i<dir->n; i++) {
+        bl_io_dirent_destroy(&dir->dirs[i]);
+    }
+    free(dir->dirs);
+    free(dir);
 
-int bl_usb_openctrl();
-void bl_usb_closectrl();
-void bl_usb_enable_service_mode();
-void bl_usb_enable_service_mode_safe();
-void bl_usb_disable_service_mode();
-int bl_usb_read_matrix_pos(int *, int *);
-int bl_usb_read_layout(uint8_t **, int *);
-int bl_usb_write_layout(uint8_t *, int);
-void bl_usb_raw_print_layout(uint16_t *, int, FILE *);
-void bl_usb_print_layout(uint8_t *, int);
+    return;
+}
 
-void bl_usb_read_version(int *, int *);
+void
+bl_io_dirent_destroy(bl_io_dirent_t *dirent) {
+    free(dirent->name);
+    return;
+}
 
-void bl_usb_pwm_read(uint8_t *, uint8_t *);
-void bl_usb_pwm_write(uint8_t, uint8_t);
-
-uint8_t bl_usb_debounce_read();
-void bl_usb_debounce_write(uint8_t debounce);
-
-bl_macro_t* bl_usb_macro_read();
-void bl_usb_macro_write(bl_macro_t *macros);
-
-/*
- * Layout
- */
-void bl_layout_configure(uint8_t, char *);
-int bl_layout_write(char *);
-void bl_layout_print(bl_layout_t *);
-int bl_layout_save(bl_layout_t *, char *);
-uint8_t *bl_layout_convert(bl_layout_t *);
-
-
-
-#endif /* __USB_H_ */

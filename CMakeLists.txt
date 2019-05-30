@@ -48,7 +48,7 @@ find_package(Curses REQUIRED)
 include_directories(${CURSES_INCLUDE_DIR})
 
 # Compile sources
-add_executable(blusb src/blusb.c src/usb.c src/layout.c src/configure_layout.c)
+add_executable(blusb src/blusb.c src/usb.c src/layout.c src/configure_layout.c src/bl_io.c src/bl_tui.c)
 target_include_directories(blusb PUBLIC ${LIBUSB_1_INCLUDE_DIRS})
 #target_link_libraries(blusb ${LIBUSB_1_LIBRARIES} ${CURSES_LIBRARY})
 target_link_libraries(blusb usb-1.0 ${CURSES_LIBRARY})

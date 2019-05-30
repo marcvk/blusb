@@ -30,7 +30,10 @@
 #ifndef __MBLUSB_H_
 #define __MBLUSB_H_
 
+#include <stdlib.h>
 #include <stdint.h>
+
+#include "bl_tui.h"
 
 #define BL_SOFTWARE_VERSION "1.0"
 
@@ -47,6 +50,16 @@
 #ifndef MIN
 #define MIN(a, b) (a < b ? a : b)
 #endif
+
+
+#define errmsg_and_abort(...) do { \
+    bl_tui_exit(); \
+    printf ("@ %s (%d): ", __FILE__, __LINE__); \
+    printf (__VA_ARGS__); \
+    printf("\n"); \
+    exit(1); \
+} while (0)
+
 
 /*
  * Custom USB commands
