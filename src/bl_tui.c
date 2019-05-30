@@ -552,26 +552,38 @@ bl_tui_select_box(select_box_t *sb, int x, int y) {
 
 bl_io_dirent_t *
 bl_tui_fselect(char *dname) {
-    bl_io_dir_t *dir = bl_io_read_directoy(dname);
-    bl_tui_select_box_value_t *sb_values = (bl_tui_select_box_value_t *) malloc( dir->n * sizeof(bl_tui_select_box_value_t) );
-    for (int i=0; i<dir->n; i++) {
-        sb_values[i].label = dir->dirs[i].name;
-        sb_values[i].data = &dir->dirs[i];
-    }
-    select_box_t *sb = bl_tui_select_box_create("Select File", sb_values, dir->n, 30, 0);
-    bl_io_dirent_t *de_copy = NULL;
-    if (bl_tui_select_box(sb, 5, 5)) {
-        bl_io_dirent_t *de_selected = (bl_io_dirent_t *) sb->items[sb->selected_item_index].data;
-        de_copy = (bl_io_dirent_t *) malloc(sizeof(bl_io_dirent_t));
-        de_copy->name = strdup(de_selected->name);
-        de_copy->fstatus = de_selected->fstatus;
+    char curdir[PATH_MAX];
+    getcwd(curdir, PATH_MAX);
+    if (chdir(dname) != 0) {
+        errmsg_and_abort("Could not change directory: %s", dname);
+        return NULL;
     } else {
-        de_copy = NULL;
+        bl_io_dir_t *dir = bl_io_read_directoy(".");
+        bl_tui_select_box_value_t *sb_values = (bl_tui_select_box_value_t *) malloc( dir->n * sizeof(bl_tui_select_box_value_t) );
+        for (int i=0; i<dir->n; i++) {
+            sb_values[i].label = dir->dirs[i].name;
+            sb_values[i].data = &dir->dirs[i];
+        }
+        select_box_t *sb = bl_tui_select_box_create("Select File", sb_values, dir->n, 30, 0);
+        bl_io_dirent_t *de_copy = NULL;
+        if (bl_tui_select_box(sb, 5, 5)) {
+            bl_io_dirent_t *de_selected = (bl_io_dirent_t *) sb->items[sb->selected_item_index].data;
+            if (S_ISDIR(de_selected->fstatus.st_mode)) {
+                de_copy = bl_tui_fselect(de_selected->name);
+            } else {
+                de_copy = (bl_io_dirent_t *) malloc(sizeof(bl_io_dirent_t));
+                de_copy->name = strdup(de_selected->name);
+                de_copy->fstatus = de_selected->fstatus;
+            }
+        } else {
+            de_copy = NULL;
+        }
+
+        bl_io_dir_destroy(dir);
+        bl_tui_select_box_destroy(sb);
+        chdir(curdir);
+
+        return de_copy;
     }
-
-    bl_io_dir_destroy(dir);
-    bl_tui_select_box_destroy(sb);
-
-    return de_copy;
 }
 

@@ -158,7 +158,7 @@ key_mapping_t bl_key_mapping[] = {
     { VK_UP, "Up Arrow", KB_UP },
     { VK_PAUSE, "Pause", KB_PAUSE }
 };
-static int n_key_mappings = sizeof(bl_key_mapping) / sizeof(key_mapping_t);
+static int _n_key_mappings = sizeof(bl_key_mapping) / sizeof(key_mapping_t);
 
 #define SELECT_BOX_WIDTH 8
 
@@ -263,12 +263,17 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix) {
     mvprintw(maxy - 1, 0, "Enter: select key, F1: Open, F2: Save, F3: Write to ctrl, F12: Quit");
 }
 
-void
-bl_layout_load_file() {
+bl_layout_t *
+bl_layout_select_and_load_file(bl_layout_t *layout) {
     bl_io_dirent_t *de = bl_tui_fselect(".");
     if (de != NULL) {
-        bl_tui_msg(40, 5, "Selected File", "file selected was: %s", de->name);
+        bl_layout_destroy(layout);
+        layout = bl_layout_load_file(de->name);
         bl_io_dirent_destroy(de);
+
+        return layout;
+    } else {
+        return NULL;
     }
 }
 
@@ -294,7 +299,7 @@ bl_layout_write_to_controller(bl_layout_t *layout) {
 }
 
 void
-bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout) {
+bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings) {
     int col = 0;
     int row = 0;
     int col_last = 0;
@@ -336,6 +341,8 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout) {
             redraw = TRUE;
         } else if (ch == KEY_F(1)) {
             bl_layout_load_file();
+            bl_layout_init_matrix(matrix, layout, bl_key_mapping_items, n_key_mappings);
+
             redraw = TRUE;
         } else if (ch == KEY_F(2)) {
             bl_layout_save_to_file(layout);
@@ -396,8 +403,8 @@ bl_layout_read(bl_layout_t *layout) {
 void
 bl_layout_configure(uint8_t nlayers, char *p_layout_array_keyfile) {
 
-    bl_layout_t layout;
-    bl_tui_select_box_value_t bl_key_mapping_items[n_key_mappings + 1];
+    bl_layout_t *layout = bl_layout_create(0);
+    bl_tui_select_box_value_t bl_key_mapping_items[_n_key_mappings + 1];
     static int not_selected_value = 0;
 
     /*
@@ -411,7 +418,7 @@ bl_layout_configure(uint8_t nlayers, char *p_layout_array_keyfile) {
      */
     bl_key_mapping_items[0].label = strdup("--");
     bl_key_mapping_items[0].data = &not_selected_value;
-    for (int i=0; i<n_key_mappings; i++) {
+    for (int i=0; i<_n_key_mappings; i++) {
       bl_key_mapping_items[i+1].label = bl_key_mapping[i].name;
       bl_key_mapping_items[i+1].data = &bl_key_mapping[i].hid;
     }
@@ -427,10 +434,10 @@ bl_layout_configure(uint8_t nlayers, char *p_layout_array_keyfile) {
         usleep(100000);
         bl_usb_enable_service_mode();
 
-        bl_layout_read(&layout);
-        bl_layout_init_matrix(matrix, &layout, bl_key_mapping_items, n_key_mappings+1);
+        bl_layout_read(layout);
+        bl_layout_init_matrix(matrix, layout, bl_key_mapping_items, _n_key_mappings+1);
         bl_layout_draw_keyboard_matrix(matrix);
-        bl_layout_navigate_matrix(matrix, &layout);
+        bl_layout_navigate_matrix(matrix, layout, bl_key_mapping_items, _n_key_mappings+1);
         bl_tui_exit();
         bl_usb_disable_service_mode();
     }

@@ -77,11 +77,17 @@ bl_layout_convert(bl_layout_t *layout) {
  * @param nlayers The number of layers to create in the struct
  */
 bl_layout_t *
-bl_create_layout(int nlayers) {
+bl_layout_create(int nlayers) {
     bl_layout_t *layout = (bl_layout_t *) malloc( sizeof(bl_layout_t) );
     layout->nlayers = nlayers;
 
     return layout;
+}
+
+void
+bl_layout_destroy(bl_layout_t *layout) {
+    free(layout);
+    return;
 }
 
 /**
@@ -89,7 +95,7 @@ bl_create_layout(int nlayers) {
  * must be freed after use.
  */
 bl_layout_t*
-bl_parse_layout_file(char *fname) {
+bl_layout_load_file(char *fname) {
     FILE *f = fopen(fname, "r");
     if (f == NULL) {
         printf("Could not open file %s\n", fname);
@@ -225,7 +231,7 @@ bl_layout_print(bl_layout_t *layout) {
  */
 int
 bl_layout_write(char *fname) {
-    bl_layout_t *layout = bl_parse_layout_file(fname);
+    bl_layout_t *layout = bl_layout_load_file(fname);
     uint8_t *data = bl_layout_convert(layout);
 
     bl_usb_write_layout(data, layout->nlayers);
