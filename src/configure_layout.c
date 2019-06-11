@@ -51,20 +51,14 @@ typedef struct key_mapping_struct {
 } key_mapping_t;
 
 key_mapping_t bl_key_mapping[] = {
-    { VK_ADD, "NP_Add", KP_PLUS },
     { VK_APPS, "Win Menu", KB_APP },
     { VK_BACK, "Backspace", KB_BKSPC },
     { VK_CAPITAL, "Caps Lock", KB_CAPLK },
-    { VK_DECIMAL, "NP_Dot", KP_DOT },
     { VK_DELETE, "Delete", KB_DEL },
-    { VK_DIVIDE, "NP_Divide", KP_SLASH },
     { VK_DOWN, "Down Arrow", KB_DOWN },
     { VK_END, "End", KB_END },
     { VK_ESCAPE, "ESC", KB_ESC },
     { VK_F1, "F1", KB_F1 },
-    { VK_F10, "F10", KB_F10 },
-    { VK_F11, "F11", KB_F11 },
-    { VK_F12, "F12", KB_F12 },
     { VK_F2, "F2", KB_F2 },
     { VK_F3, "F3", KB_F3 },
     { VK_F4, "F4", KB_F4 },
@@ -73,6 +67,9 @@ key_mapping_t bl_key_mapping[] = {
     { VK_F7, "F7", KB_F7 },
     { VK_F8, "F8", KB_F8 },
     { VK_F9, "F9", KB_F9 },
+    { VK_F10, "F10", KB_F10 },
+    { VK_F11, "F11", KB_F11 },
+    { VK_F12, "F12", KB_F12 },
     { VK_HOME, "Home", KB_HOME },
     { VK_INSERT, "Insert", KB_INS },
     { VK_KEY_0, "KB 0", KB_0 },
@@ -116,19 +113,24 @@ key_mapping_t bl_key_mapping[] = {
     { VK_LMENU, "Left Alt", KB_LALT },
     { VK_LSHIFT, "Left Shift", KB_LSHFT },
     { VK_LWIN, "Left Win", KB_LGUI },
-    { VK_MULTIPLY, "NP_Multiply", KP_ASTRX },
     { VK_NEXT, "Page down", KB_PGDN },
     { VK_NUMLOCK, "Num Lock", KB_NUMLK },
-    { VK_NUMPAD0, "NP_0", KP_0 },
-    { VK_NUMPAD1, "NP_1", KP_1 },
-    { VK_NUMPAD2, "NP_2", KP_2 },
-    { VK_NUMPAD3, "NP_3", KP_3 },
-    { VK_NUMPAD4, "NP_4", KP_4 },
-    { VK_NUMPAD5, "NP_5", KP_5 },
-    { VK_NUMPAD6, "NP_6", KP_6 },
-    { VK_NUMPAD7, "NP_7", KP_7 },
-    { VK_NUMPAD8, "NP_8", KP_8 },
-    { VK_NUMPAD9, "NP_9", KP_9 },
+    { VK_DIVIDE, "NP Divide", KP_SLASH },
+    { VK_MULTIPLY, "NP Multiply", KP_ASTRX },
+    { VK_SUBTRACT, "NP Subtract", KP_MINUS },
+    { VK_ADD, "NP Add", KP_PLUS },
+    { VK_RETURN, "NP Enter", KP_ENTER },
+    { VK_DECIMAL, "NP Dot", KP_DOT },
+    { VK_NUMPAD0, "NP 0", KP_0 },
+    { VK_NUMPAD1, "NP 1", KP_1 },
+    { VK_NUMPAD2, "NP 2", KP_2 },
+    { VK_NUMPAD3, "NP 3", KP_3 },
+    { VK_NUMPAD4, "NP 4", KP_4 },
+    { VK_NUMPAD5, "NP 5", KP_5 },
+    { VK_NUMPAD6, "NP 6", KP_6 },
+    { VK_NUMPAD7, "NP 7", KP_7 },
+    { VK_NUMPAD8, "NP 8", KP_8 },
+    { VK_NUMPAD9, "NP 9", KP_9 },
     { VK_OEM_1, "OEM_1", KB_LBRCE },
     { VK_OEM_102, "OEM_102", KB_PIPE },
     { VK_OEM_2, "Backslash", KB_BSLSH },
@@ -145,7 +147,6 @@ key_mapping_t bl_key_mapping[] = {
     { VK_RCONTROL, "Right Ctrl", KB_RCTRL },
     { VK_RETURN, "Enter", KB_ENTER },
     { VK_RETURN, "Enter", KB_RETURN },
-    { VK_RETURN, "NP_Enter", KP_ENTER },
     { VK_RIGHT, "Right Arrow", KB_RIGHT },
     { VK_RMENU, "Right Alt", KB_RALT },
     { VK_RSHIFT, "Right Shift", KB_RSHFT },
@@ -153,7 +154,6 @@ key_mapping_t bl_key_mapping[] = {
     { VK_SCROLL, "Scroll Lock", KB_SCRLK },
     { VK_SNAPSHOT, "Print Screen", KB_PSCRN },
     { VK_SPACE, "Space", KB_SPACE },
-    { VK_SUBTRACT, "NP_Subtract", KP_MINUS },
     { VK_TAB, "Tab", KB_TAB },
     { VK_UP, "Up Arrow", KB_UP },
     { VK_PAUSE, "Pause", KB_PAUSE }
@@ -260,7 +260,7 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix) {
      * Footer
      */
     int maxy = getmaxy(stdscr);
-    mvprintw(maxy - 1, 0, "Enter: select key, F1: Open, F2: Save, F3: Write to ctrl, F12: Quit");
+    mvprintw(maxy - 1, 0, "Enter: select key, O: Open, S: Save, W: Write to ctrl, Q: Quit");
 }
 
 bl_layout_t *
@@ -310,7 +310,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, bl_tui_sel
     int last_ch = ch;
     int redraw = FALSE;
     draw_matrix_cell(matrix[layer][row][col], col, row, TRUE);
-    while (ch != KEY_F(12)) {
+    while (ch != 'q' && ch != 'Q') {
         /*
          * See if key was pressed on the IBM model m keyboard and get
          * its position if so.
@@ -339,15 +339,18 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, bl_tui_sel
             layout->matrix[layer][row][col] = *((uint16_t*) sb->items[sb->selected_item_index].data);
             erase();
             redraw = TRUE;
-        } else if (ch == KEY_F(1)) {
-            bl_layout_load_file();
-            bl_layout_init_matrix(matrix, layout, bl_key_mapping_items, n_key_mappings);
-
+        } else if (ch == 'o' || ch == 'O') {
+            bl_layout_t *layout_new = bl_layout_select_and_load_file(layout);
+            if (layout_new != NULL) {
+                bl_layout_destroy(layout);
+                layout = layout_new;
+                bl_layout_init_matrix(matrix, layout, bl_key_mapping_items, n_key_mappings);
+            }
             redraw = TRUE;
-        } else if (ch == KEY_F(2)) {
+        } else if (ch == 's' || ch == 'S') {
             bl_layout_save_to_file(layout);
             redraw = TRUE;
-        } else if (ch == KEY_F(3)) {
+        } else if (ch == 'w' || ch == 'W') {
             bl_layout_write_to_controller(layout);
             redraw = TRUE;
         } else {

@@ -47,7 +47,7 @@ typedef struct bl_io_dir_t {
     bl_io_dirent_t *dirs;
 } bl_io_dir_t;
 
-bl_io_dir_t *bl_io_read_directoy(char *dname);
+bl_io_dir_t *bl_io_read_directory(char *dname);
 void bl_io_dir_destroy(bl_io_dir_t *dir);
 void bl_io_dirent_destroy(bl_io_dirent_t *dirent);
 

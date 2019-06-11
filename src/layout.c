@@ -116,7 +116,7 @@ bl_layout_load_file(char *fname) {
      */
     const int BL_STATE_DIGIT = 0;
     const int BL_STATE_WHITESPACE = 1;
-    bl_layout_t *layout = bl_create_layout(NUMLAYERS_MAX);
+    bl_layout_t *layout = bl_layout_create(NUMLAYERS_MAX);
     int layer = 0;
     int col = 0;
     int row = 0;
@@ -179,6 +179,8 @@ bl_layout_load_file(char *fname) {
                 // don't read the next character, we need the current character to be processed as a digit in the BL_STATE_DIGIT state.
             } else {
                 printf("Unexpected character encountered while skipping whitespace: %c, at line %d, key %d (position=%ld)\n", ch, layer, col+row*col, ftell(f));
+                free(layout);
+                return NULL;
             }
         }
     }

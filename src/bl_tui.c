@@ -558,7 +558,7 @@ bl_tui_fselect(char *dname) {
         errmsg_and_abort("Could not change directory: %s", dname);
         return NULL;
     } else {
-        bl_io_dir_t *dir = bl_io_read_directoy(".");
+        bl_io_dir_t *dir = bl_io_read_directory(".");
         bl_tui_select_box_value_t *sb_values = (bl_tui_select_box_value_t *) malloc( dir->n * sizeof(bl_tui_select_box_value_t) );
         for (int i=0; i<dir->n; i++) {
             sb_values[i].label = dir->dirs[i].name;
@@ -568,8 +568,18 @@ bl_tui_fselect(char *dname) {
         bl_io_dirent_t *de_copy = NULL;
         if (bl_tui_select_box(sb, 5, 5)) {
             bl_io_dirent_t *de_selected = (bl_io_dirent_t *) sb->items[sb->selected_item_index].data;
-            if (S_ISDIR(de_selected->fstatus.st_mode)) {
+	    if (de_selected == NULL) {
+		/* ESC was pressed */
+		de_copy = NULL;
+	    } else if (S_ISDIR(de_selected->fstatus.st_mode)) {
                 de_copy = bl_tui_fselect(de_selected->name);
+		if (de_copy != NULL) {
+		    char *fname = (char *) malloc(strlen(dname) + 1 + strlen(de_copy->name));
+		    sprintf(fname, "%s/%s", de_selected->name, de_copy->name);
+		    //printf("fname=%s\n", fname);
+		    free(de_copy->name);
+		    de_copy->name = fname;
+		}
             } else {
                 de_copy = (bl_io_dirent_t *) malloc(sizeof(bl_io_dirent_t));
                 de_copy->name = strdup(de_selected->name);
