@@ -440,7 +440,7 @@ bl_tui_select_box_redraw_list(WINDOW *win, select_box_t *sb,
     werase(win);
     box(win, 0, 0);
     if (sb->title != NULL) {
-        mvwprintw(win, 0, win->_maxx / 2 - strlen(sb->title) / 2 - 1, " %s ", sb->title);
+        mvwprintw(win, 0, getmaxx(win) / 2 - strlen(sb->title) / 2 - 1, " %s ", sb->title);
     }
     for (int i=item_start; i<item_end; i++) {
         if (i == cursor_i) {
