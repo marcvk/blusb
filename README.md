@@ -6,9 +6,39 @@ Jörn Giest has created a replacement controller for the IBM Model M keyboard, f
 
 Based on a Win32 commandline application written by Jörn to support his controller.
 
+
 ## How to install
 
-Clone the repository and compile.
+Clone the repository.
+
+Linux
+=====
+
+Install libusb-1.0, gcc, make, cmake, ncurses
+
+Windows
+=======
+
+1. Download and install cygwin
+2. Install at least the following packages for cygwin
+  * gcc-g++
+  * make
+  * cmake
+  * libusb1.0
+  * libusb1.0-devel
+3. Download and compile PDCurses, see https://github.com/wmcbrine/PDCurses
+   Put PDCurses in the same parent directory as blusb, i.e.
+   c:/your/dir/blusb
+   c:/your/dir/PDCurses
+
+Generic
+=======
+
+1. cd blusb
+2. mkdir build
+3. cd build
+4. cmake ..
+5. make
 
 ## How to operate
 
