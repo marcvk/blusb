@@ -33,7 +33,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
-#include <ncurses.h>
 #include <libusb.h>
 #include <string.h>
 #include <sys/types.h>

@@ -30,7 +30,12 @@
 #ifndef __BL_TUI_H__
 #define __BL_TUI_H__ 1
 
+#ifdef __CYGWIN__
+#include "curses.h"
+#else
 #include <ncurses.h>
+#endif
+
 #include <ctype.h>
 
 #include "bl_io.h"
