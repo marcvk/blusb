@@ -26,19 +26,31 @@ Windows
   * cmake
   * libusb1.0
   * libusb1.0-devel
+  * git
 3. Download and compile PDCurses, see https://github.com/wmcbrine/PDCurses
    Put PDCurses in the same parent directory as blusb, i.e.
-   c:/your/dir/blusb
-   c:/your/dir/PDCurses
+     c:/your/dir/blusb
+     c:/your/dir/PDCurses
 
-Generic
-=======
+   cd into 'wincon' and type 'make'.
+
+NB The generated binary will only work with the Windows console window. If you
+try running it in a cygwin terminal window, you'll get an error: 
+
+"Redirection is not supported
+
+ 
+
+Common
+======
 
 1. cd blusb
 2. mkdir build
 3. cd build
 4. cmake ..
 5. make
+6. And if on Windows, copy the cygwin1.dll to the build directory. You can 
+   find it in /usr/bin/cygwin1.dll (when copying in the cygwin terminal window)
 
 ## How to operate
 
