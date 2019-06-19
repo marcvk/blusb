@@ -37,7 +37,7 @@ Windows
 NB The generated binary will only work with the Windows console window. If you
 try running it in a cygwin terminal window, you'll get an error: 
 
-"Redirection is not supported
+"Redirection is not supported"
 
  
 
@@ -49,8 +49,9 @@ Common
 3. cd build
 4. cmake ..
 5. make
-6. And if on Windows, copy the cygwin1.dll to the build directory. You can 
-   find it in /usr/bin/cygwin1.dll (when copying in the cygwin terminal window)
+6. And if on Windows, copy cygwin1.dll and cygusb-1.0.dll to the build 
+   directory. You can find both in /usr/bin (when copying in the cygwin 
+   terminal window)
 
 ## How to operate
 
