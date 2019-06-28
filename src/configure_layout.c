@@ -263,13 +263,11 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix) {
 }
 
 bl_layout_t *
-bl_layout_select_and_load_file(bl_layout_t *layout) {
+bl_layout_select_and_load_file() {
     bl_io_dirent_t *de = bl_tui_fselect(".");
     if (de != NULL) {
-        bl_layout_destroy(layout);
-        layout = bl_layout_load_file(de->name);
+        bl_layout_t *layout = bl_layout_load_file(de->name);
         bl_io_dirent_destroy(de);
-
         return layout;
     } else {
         return NULL;
@@ -292,8 +290,7 @@ void
 bl_layout_write_to_controller(bl_layout_t *layout) {
     if (bl_tui_confirm(61, 1, "Write to Controller",
                        "Do you wish to write the new configuration to the controller?")) {
-//        uint8_t *buffer = bl_layout_
-//        bl_layout_write(layout);
+        bl_layout_write(layout);
     }
 }
 
@@ -339,7 +336,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, bl_tui_sel
             erase();
             redraw = TRUE;
         } else if (ch == 'o' || ch == 'O') {
-            bl_layout_t *layout_new = bl_layout_select_and_load_file(layout);
+            bl_layout_t *layout_new = bl_layout_select_and_load_file();
             if (layout_new != NULL) {
                 bl_layout_destroy(layout);
                 layout = layout_new;
@@ -359,6 +356,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, bl_tui_sel
             }
         }
         if (redraw) {
+            clear();
             bl_layout_draw_keyboard_matrix(matrix);
             draw_matrix_cell(matrix[layer][row][col], col, row, TRUE);
             redraw = FALSE;
@@ -422,6 +420,7 @@ bl_layout_configure(uint8_t nlayers, char *p_layout_array_keyfile) {
     bl_key_mapping_items[0].data = &not_selected_value;
     for (int i=0; i<_n_key_mappings; i++) {
       bl_key_mapping_items[i+1].label = bl_key_mapping[i].name;
+      bl_key_mapping_items[i+1].is_bold = FALSE;
       bl_key_mapping_items[i+1].data = &bl_key_mapping[i].hid;
     }
 

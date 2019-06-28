@@ -33,7 +33,7 @@ int
 bl_io_sort_by_fname(const void *s1, const void *s2) {
     bl_io_dirent_t *d1 = (bl_io_dirent_t *) s1;
     bl_io_dirent_t *d2 = (bl_io_dirent_t *) s2;
-    
+
     return strcmp(d1->name, d2->name);
 }
 
@@ -57,20 +57,20 @@ bl_io_sort_by_fname_and_dir(const void *s1, const void *s2) {
 
     /* .. always on top */
     if (strcmp(d1->name, "..") == 0) {
-	return -1;
+        return -1;
     }
     if (strcmp(d2->name, "..") == 0) {
-	return 1;
+        return 1;
     }
     /* directories first, other files next */
     if (S_ISDIR(d1->fstatus.st_mode) && S_ISDIR(d2->fstatus.st_mode)) {
-	return strcmp(d1->name, d2->name);
+        return strcmp(d1->name, d2->name);
     }
     if (S_ISDIR(d1->fstatus.st_mode)) {
-	return -1;
+        return -1;
     }
     if (S_ISDIR(d2->fstatus.st_mode)) {
-	return 1;
+        return 1;
     }
     return strcmp(d1->name, d2->name);
 }
@@ -101,19 +101,19 @@ bl_io_read_directory(char *dname) {
     int i = 0;
     while (i<io_dir->n) {
         struct dirent *dire = readdir(dir);
-	/* skip '.' dir */
-	if (strcmp(dire->d_name, ".") != 0) {
-	    io_dir->dirs[i].name = strdup(dire->d_name);
-	    lstat(io_dir->dirs[i].name, &io_dir->dirs[i].fstatus);
-	    i++;
-	} else {
-	    io_dir->n--;
-	}
+        /* skip '.' dir */
+        if (strcmp(dire->d_name, ".") != 0) {
+            io_dir->dirs[i].name = strdup(dire->d_name);
+            lstat(io_dir->dirs[i].name, &io_dir->dirs[i].fstatus);
+            i++;
+        } else {
+            io_dir->n--;
+        }
     }
     closedir(dir);
 
     qsort(io_dir->dirs, io_dir->n, sizeof(bl_io_dirent_t), bl_io_sort_by_fname_and_dir);
-    
+
     return io_dir;
 }
 

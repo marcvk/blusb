@@ -229,19 +229,28 @@ bl_layout_print(bl_layout_t *layout) {
 }
 
 /**
- * Write the layout in the given file to the controller
+ * Write the bl_layout_t to the controller
  */
 int
-bl_layout_write(char *fname) {
-    bl_layout_t *layout = bl_layout_load_file(fname);
+bl_layout_write(bl_layout_t *layout) {
     uint8_t *data = bl_layout_convert(layout);
-
-    bl_usb_write_layout(data, layout->nlayers);
-
-    free(layout);
+    int ret = bl_usb_write_layout(data, layout->nlayers);
     free(data);
+    return ret;
+}
 
-    return 0;
+/**
+ * Write the layout in the given file to the controller.
+ *
+ * returns TRUE if successfull, FALSE if not.
+ */
+int
+bl_layout_write_from_file(char *fname) {
+    bl_layout_t *layout = bl_layout_load_file(fname);
+    int ret = bl_layout_write(layout);
+    free(layout);
+
+    return ret;
 }
 
 int

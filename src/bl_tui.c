@@ -271,7 +271,7 @@ bl_tui_textbox(char *title, char *label, int x, int y, int width, int maxlength)
 
     const int IN_BUTTONS = 0;
     const int IN_TEXT = 1;
-    int state = IN_BUTTONS;
+    int state = IN_TEXT;
     int ch;
     while (!done) {
         ch = getch();
@@ -442,6 +442,9 @@ bl_tui_select_box_redraw_list(WINDOW *win, select_box_t *sb,
         mvwprintw(win, 0, getmaxx(win) / 2 - strlen(sb->title) / 2 - 1, " %s ", sb->title);
     }
     for (int i=item_start; i<item_end; i++) {
+        if (sb->items[i].is_bold) {
+            wattron(win, A_BOLD);
+        }
         if (i == cursor_i) {
             wattron(win, A_REVERSE);
             mvwprintw(win, i-item_start+1, 1, "%s", sb->items[i].label);
@@ -449,6 +452,7 @@ bl_tui_select_box_redraw_list(WINDOW *win, select_box_t *sb,
         } else {
             mvwprintw(win, i-item_start+1, 1, "%s", sb->items[i].label);
         }
+        wattroff(win, A_BOLD);
     }
     wrefresh(win);
 }
@@ -561,24 +565,25 @@ bl_tui_fselect(char *dname) {
         bl_tui_select_box_value_t *sb_values = (bl_tui_select_box_value_t *) malloc( dir->n * sizeof(bl_tui_select_box_value_t) );
         for (int i=0; i<dir->n; i++) {
             sb_values[i].label = dir->dirs[i].name;
+            sb_values[i].is_bold = S_ISDIR(dir->dirs[i].fstatus.st_mode);
             sb_values[i].data = &dir->dirs[i];
         }
         select_box_t *sb = bl_tui_select_box_create("Select File", sb_values, dir->n, 30, 0);
         bl_io_dirent_t *de_copy = NULL;
         if (bl_tui_select_box(sb, 5, 5)) {
             bl_io_dirent_t *de_selected = (bl_io_dirent_t *) sb->items[sb->selected_item_index].data;
-	    if (de_selected == NULL) {
-		/* ESC was pressed */
-		de_copy = NULL;
-	    } else if (S_ISDIR(de_selected->fstatus.st_mode)) {
+            if (de_selected == NULL) {
+            /* ESC was pressed */
+            de_copy = NULL;
+            } else if (S_ISDIR(de_selected->fstatus.st_mode)) {
                 de_copy = bl_tui_fselect(de_selected->name);
-		if (de_copy != NULL) {
-		    char *fname = (char *) malloc(strlen(dname) + 1 + strlen(de_copy->name));
-		    sprintf(fname, "%s/%s", de_selected->name, de_copy->name);
-		    //printf("fname=%s\n", fname);
-		    free(de_copy->name);
-		    de_copy->name = fname;
-		}
+                if (de_copy != NULL) {
+                    char *fname = (char *) malloc(strlen(dname) + 1 + strlen(de_copy->name));
+                    sprintf(fname, "%s/%s", de_selected->name, de_copy->name);
+                    //printf("fname=%s\n", fname);
+                    free(de_copy->name);
+                    de_copy->name = fname;
+                }
             } else {
                 de_copy = (bl_io_dirent_t *) malloc(sizeof(bl_io_dirent_t));
                 de_copy->name = strdup(de_selected->name);

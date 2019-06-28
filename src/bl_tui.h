@@ -64,6 +64,7 @@ typedef struct bl_tui_textbox_t {
 
 typedef struct bl_tui_select_box_value_t {
     char *label;
+    int is_bold;
     void *data;
 } bl_tui_select_box_value_t;
 
