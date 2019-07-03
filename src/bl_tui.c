@@ -146,7 +146,7 @@ bl_tui_buttons(int x, int y, char *labels[], int n) {
     int old_selected = -1;
     while (!done) {
         int ch = getch();
-        if (ch == '\n') {
+        if (ch == '\n' || ch == '\r') {
             // select button
             done = TRUE;
         } else if (ch == '\t' || ch == KEY_RIGHT) {
@@ -276,7 +276,7 @@ bl_tui_textbox(char *title, char *label, int x, int y, int width, int maxlength)
     while (!done) {
         ch = getch();
         if (state == IN_BUTTONS) {
-            if (ch == '\n') {
+            if (ch == '\n' || ch == '\r') {
                 // select button
                 done = TRUE;
             } else if (ch == 27) {
@@ -307,7 +307,7 @@ bl_tui_textbox(char *title, char *label, int x, int y, int width, int maxlength)
             }
         } else if (state == IN_TEXT) {
             // edit text
-            if (ch == '\n') {
+            if (ch == '\n' || ch == '\r') {
                 // select button
                 done = TRUE;
             } else if (ch == 27) {
@@ -518,7 +518,7 @@ bl_tui_select_box(select_box_t *sb, int x, int y) {
                 sb->selected_item_index = old_selected_item_index;
                 selecting = FALSE;
                 canceled = TRUE;
-            } else if (ch == '\n' /* ENTER */) {
+            } else if (ch == '\n' || ch == '\r' /* ENTER */) {
                 sb->selected_item_index = cursor_i;
                 selecting = FALSE;
             } else if (ch == KEY_UP && cursor_i > 0) {

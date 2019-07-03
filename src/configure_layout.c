@@ -349,7 +349,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             row++;
         } else if (ch == KEY_LEFT && row > 0) {
             row--;
-        } else if (ch == '\n') {
+        } else if (ch == '\n' || ch == '\r') {
             select_box_t *sb = matrix[layer][row][col];
             bl_tui_select_box(sb, row  * (SELECT_BOX_WIDTH + 1) + 4, col + 4);
             mvprintw(1, 0, "sel=%d\n",  *((uint16_t*) sb->items[sb->selected_item_index].data));
