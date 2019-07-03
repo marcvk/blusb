@@ -71,8 +71,9 @@ void bl_usb_macro_write(bl_macro_t *macros);
 /*
  * Layout
  */
-void bl_layout_configure(uint8_t, char *);
+void bl_layout_configure(bl_layout_t *);
 int bl_layout_write(bl_layout_t *);
+int bl_layout_write_from_file(char *);
 void bl_layout_print(bl_layout_t *);
 int bl_layout_save(bl_layout_t *, char *);
 uint8_t *bl_layout_convert(bl_layout_t *);

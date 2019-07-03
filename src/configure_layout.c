@@ -224,9 +224,12 @@ bl_layout_init_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout,
  * .
  * .
  * C8
+ *
+ * @param matrix Data structure containing the select boxes for each layer
+ * @param layer The index of the layer to draw, starts at 0.
  */
 void
-bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix) {
+bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
 
     /*
      * Draw column headers (vertically)
@@ -238,10 +241,24 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix) {
     }
 
     /*
+     * Draw layer tabs
+     */
+    mvprintw(2, 0, "Layer");
+    attron(A_REVERSE);
+    for (int i=0; i<nlayers; i++) {
+        if (i == layer) {
+            attron(A_BOLD);
+        }
+        mvprintw(2, 6 + i*5, "  %d  ", i);
+        attroff(A_BOLD);
+    }
+    attroff(A_REVERSE);
+
+    /*
      * Draw row headers (horizontally
      */
     for (int r=0; r<NUMROWS; r++) {
-        mvprintw(2, 4+r*(SELECT_BOX_WIDTH+1), "R%0d", r);
+        mvprintw(3, 4+r*(SELECT_BOX_WIDTH+1), "R%0d", r);
     }
     attroff(COLOR_PAIR(1));
 
@@ -251,7 +268,7 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix) {
      */
     for (int c=0; c<NUMCOLS; c++) {
         for (int r=0; r<NUMROWS; r++) {
-            draw_matrix_cell(matrix[0][r][c], c, r, FALSE);
+            draw_matrix_cell(matrix[layer][r][c], c, r, FALSE);
         }
     }
 
@@ -259,7 +276,7 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix) {
      * Footer
      */
     int maxy = getmaxy(stdscr);
-    mvprintw(maxy - 1, 0, "Enter: select key, O: Open, S: Save, W: Write to ctrl, Q: Quit");
+    mvprintw(maxy - 1, 0, "Enter: select key, O: Open, S: Save, W: Write to ctrl, L: Layers, Q: Quit");
 }
 
 bl_layout_t *
@@ -295,12 +312,16 @@ bl_layout_write_to_controller(bl_layout_t *layout) {
 }
 
 void
-bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings) {
+bl_layout_manage_layers(int *layer, int *nlayers) {
+
+}
+
+void
+bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer, int nlayers, bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings) {
     int col = 0;
     int row = 0;
     int col_last = 0;
     int row_last = 0;
-    int layer = 0;
 
     int ch = getch();
     int last_ch = ch;
@@ -349,6 +370,8 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, bl_tui_sel
         } else if (ch == 'w' || ch == 'W') {
             bl_layout_write_to_controller(layout);
             redraw = TRUE;
+        } else if (ch == 'l' || ch == 'L') {
+            bl_layout_manage_layers(&layer, &nlayers);
         } else {
             if (ch != last_ch) {
                 mvprintw(0, 1, "key=%d", ch);
@@ -357,7 +380,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, bl_tui_sel
         }
         if (redraw) {
             clear();
-            bl_layout_draw_keyboard_matrix(matrix);
+            bl_layout_draw_keyboard_matrix(matrix, layer, nlayers);
             draw_matrix_cell(matrix[layer][row][col], col, row, TRUE);
             redraw = FALSE;
         }
@@ -374,6 +397,21 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, bl_tui_sel
     }
 }
 
+/**
+ * Initialize all layers to 0
+ *
+ * @param layout Layout data
+ */
+void
+bl_layout_init_layout(bl_layout_t *layout) {
+    for (int layer=0; layer < NUMLAYERS_MAX; layer++) {
+        for (int row=0; row<NUMROWS; row++) {
+            for (int col=0; col<NUMCOLS; col++) {
+                layout->matrix[layer][row][col] = 0;
+            }
+        }
+    }
+}
 
 /**
  * Read the existing keyboard layout and return it.
@@ -401,9 +439,8 @@ bl_layout_read(bl_layout_t *layout) {
 }
 
 void
-bl_layout_configure(uint8_t nlayers, char *p_layout_array_keyfile) {
+bl_layout_configure(bl_layout_t *layout) {
 
-    bl_layout_t *layout = bl_layout_create(0);
     bl_tui_select_box_value_t bl_key_mapping_items[_n_key_mappings + 1];
     static int not_selected_value = 0;
 
@@ -435,10 +472,19 @@ bl_layout_configure(uint8_t nlayers, char *p_layout_array_keyfile) {
         usleep(100000);
         bl_usb_enable_service_mode();
 
-        bl_layout_read(layout);
+        if (layout == NULL) {
+            fprintf(stderr, "reading from controller\n");
+            layout = bl_layout_create(0);
+            bl_layout_init_layout(layout);
+            bl_layout_read(layout);
+        } else {
+            printf("using existing layout\n");
+            bl_layout_print(layout);
+        }
+
         bl_layout_init_matrix(matrix, layout, bl_key_mapping_items, _n_key_mappings+1);
-        bl_layout_draw_keyboard_matrix(matrix);
-        bl_layout_navigate_matrix(matrix, layout, bl_key_mapping_items, _n_key_mappings+1);
+        bl_layout_draw_keyboard_matrix(matrix, 0, 2);
+        bl_layout_navigate_matrix(matrix, layout, 0, 2, bl_key_mapping_items, _n_key_mappings+1);
         bl_tui_exit();
         bl_usb_disable_service_mode();
     }

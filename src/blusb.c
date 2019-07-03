@@ -40,7 +40,16 @@
  */
 void
 bl_ui() {
-    bl_layout_configure(0, NULL);
+    bl_layout_configure(NULL);
+}
+
+/*
+ * Load the file and start the text ui
+ */
+void
+bl_ui_load_file(char *fname) {
+    bl_layout_t *layout = bl_layout_load_file(fname);
+    bl_layout_configure(layout);
 }
 
 /*
@@ -69,7 +78,7 @@ bl_print_layout() {
 
 void
 bl_write_layout(char *fname) {
-    bl_layout_write(fname);
+    bl_layout_write_from_file(fname);
 }
 
 /*
@@ -145,12 +154,10 @@ bl_print_usage(char **argv) {
     printf("\n");
     printf("Usage: %s [-option] [-optional parameter] [filename]\n", argv[0]);
     printf("\n");
-    printf("When executing without arguments it will enter in a text UI mode.\n");
-    printf("If no options are passed, but a filename is supplied, the programm will start\n");
-    printf("in UI mode and load the file as a layout file to be edited.\n");
-    printf("\n");
     printf("Options:");
     printf("\n");
+    printf("  -ui [filename]                   Start in interactive  UI mode, if a layout filename is supplied\n");
+    printf("                                   the file is loaded first.\n");
     printf("  -read-pwm                        Read the pwm value from the controller.\n");
     printf("  -write-pwm [value_USB value_BT]  Write the pwm value to the controller, valid\n");
     printf("                                   range: 0-255\n");
@@ -201,11 +208,17 @@ main(int argc, char **argv) {
             BL_EXEC(bl_print_version());
         } else if (strcmp(argv[1], "-h") == 0) {
             bl_print_usage(argv);
+        } else if (strcmp(argv[1], "-ui") == 0) {
+            if (argc == 3) {
+                BL_EXEC(bl_ui_load_file(argv[2]));
+            } else {
+                BL_EXEC(bl_ui());
+            }
         } else {
-            bl_print_usage(argv);
+            BL_EXEC(bl_ui());
         }
     } else {
-        BL_EXEC(bl_ui());
+        bl_print_usage(argv);
     }
 }
 
