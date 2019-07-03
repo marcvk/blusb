@@ -31,10 +31,13 @@
 #include <unistd.h>
 #include <stdarg.h>
 
+#include <windows.h>
+
 #include "blusb.h"
 #include "bl_tui.h"
 #include "bl_io.h"
 
+/* global state for ui init */
 static int _bl_tui_initialised = FALSE;
 
 void
@@ -573,18 +576,21 @@ bl_tui_fselect(char *dname) {
         if (bl_tui_select_box(sb, 5, 5)) {
             bl_io_dirent_t *de_selected = (bl_io_dirent_t *) sb->items[sb->selected_item_index].data;
             if (de_selected == NULL) {
-            /* ESC was pressed */
-            de_copy = NULL;
+                /* ESC was pressed */
+                de_copy = NULL;
             } else if (S_ISDIR(de_selected->fstatus.st_mode)) {
                 de_copy = bl_tui_fselect(de_selected->name);
                 if (de_copy != NULL) {
                     char *fname = (char *) malloc(strlen(dname) + 1 + strlen(de_copy->name));
 #ifdef __CYGWIN__
+char d[PATH_MAX];
+GetCurrentDirectory(PATH_MAX, d);
+printf("curdir=%s\n", d);
                     sprintf(fname, "%s\\%s", de_selected->name, de_copy->name);
 #else
                     sprintf(fname, "%s/%s", de_selected->name, de_copy->name);
 #endif
-                    //printf("fname=%s\n", fname);
+                    printf("fselect dname=%s, fname=%s, de_copy=%s\n", dname, fname, de_copy->name);
                     free(de_copy->name);
                     de_copy->name = fname;
                 }
@@ -592,6 +598,7 @@ bl_tui_fselect(char *dname) {
                 de_copy = (bl_io_dirent_t *) malloc(sizeof(bl_io_dirent_t));
                 de_copy->name = strdup(de_selected->name);
                 de_copy->fstatus = de_selected->fstatus;
+printf("fselect dname=%s, de_copy=%s\n", dname, de_copy->name);
             }
         } else {
             de_copy = NULL;

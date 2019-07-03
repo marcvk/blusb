@@ -39,6 +39,7 @@
 
 typedef struct bl_io_dirent_t {
     char *name;
+    char *path;
     struct stat fstatus;
 } bl_io_dirent_t;
 

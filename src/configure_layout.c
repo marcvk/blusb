@@ -283,6 +283,7 @@ bl_layout_t *
 bl_layout_select_and_load_file() {
     bl_io_dirent_t *de = bl_tui_fselect(".");
     if (de != NULL) {
+printf("load_file: fname=%s\n", de->name);
         bl_layout_t *layout = bl_layout_load_file(de->name);
         bl_io_dirent_destroy(de);
         return layout;

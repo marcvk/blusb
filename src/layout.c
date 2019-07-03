@@ -96,9 +96,12 @@ bl_layout_destroy(bl_layout_t *layout) {
  */
 bl_layout_t*
 bl_layout_load_file(char *fname) {
-    FILE *f = fopen(fname, "r");
+    char curdir[PATH_MAX];
+//sprintf(curdir, "C:\\Users\\Marc van Kempen\\Documents\\src\\blusb\\build\\%s", fname);
+sprintf(curdir, "C:\\Users\\Marc van Kempen\\Documents\\src\\blusb\\build\\..\\layouts\\ibm_model_m_blusb_universal_iso.bin");
+    FILE *f = fopen(curdir, "r");
     if (f == NULL) {
-        printf("Could not open file %s\n", fname);
+        printf("Could not open file %s\n", curdir);
         return NULL;
     }
 
