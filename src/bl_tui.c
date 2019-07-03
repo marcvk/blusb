@@ -579,7 +579,11 @@ bl_tui_fselect(char *dname) {
                 de_copy = bl_tui_fselect(de_selected->name);
                 if (de_copy != NULL) {
                     char *fname = (char *) malloc(strlen(dname) + 1 + strlen(de_copy->name));
+#ifdef __CYGWIN__
+                    sprintf(fname, "%s\\%s", de_selected->name, de_copy->name);
+#else
                     sprintf(fname, "%s/%s", de_selected->name, de_copy->name);
+#endif
                     //printf("fname=%s\n", fname);
                     free(de_copy->name);
                     de_copy->name = fname;
