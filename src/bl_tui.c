@@ -31,7 +31,9 @@
 #include <unistd.h>
 #include <stdarg.h>
 
+#ifdef __CYGWIN__
 #include <windows.h>
+#endif
 
 #include "blusb.h"
 #include "bl_tui.h"
@@ -192,10 +194,13 @@ _bl_tui_confirm_or_msg(int width, int height, int is_confirm, char *title, char 
     WINDOW *win = newwin(height + 7, width + 2, y, x);
     box(win, 0, 0);
     mvwprintw(win, 0, width / 2 - strlen(title) / 2 - 1, " %s ", title);
-    wmove(win, 2, 1);
-    vw_printw(win, msg, varglist);
+    WINDOW *win_msg = newwin(height + 5, width - 2, y + 1, x + 1);
+    wmove(win_msg, 1, 1);
+    vw_printw(win_msg, msg, varglist);
     touchwin(win);
     wrefresh(win);
+    touchwin(win_msg);
+    wrefresh(win_msg);
 
     char *buttons_confirm[] = { "Ok", "Cancel" };
     char *buttons_ok[] = { "Ok" };
@@ -215,6 +220,7 @@ _bl_tui_confirm_or_msg(int width, int height, int is_confirm, char *title, char 
     wclear(win);
     wrefresh(win);
     delwin(win);
+    delwin(win_msg);
 
     return answer;
 }
@@ -250,6 +256,25 @@ bl_tui_msg(int width, int height, char *title, char *msg, ...) {
     va_end(varglist);
 
     return ret;
+}
+
+void
+bl_tui_err(int is_fatal, char *msg, ...) {
+    va_list varglist;
+    va_start(varglist, msg);
+
+    if (_bl_tui_initialised) {
+        _bl_tui_confirm_or_msg(60, 4, FALSE, "Error", msg, varglist);
+    } else {
+        vfprintf(stderr, msg, varglist);
+    }
+
+    if (is_fatal) {
+        bl_tui_exit();
+        exit(1);
+    }
+
+    va_end(varglist);
 }
 
 char *
@@ -374,7 +399,7 @@ bl_tui_textbox(char *title, char *label, int x, int y, int width, int maxlength)
             }
             wrefresh(textbox->win);
         } else {
-            printf("Invalid state: %d\n", state);
+            bl_tui_err(FALSE, "Invalid state: %d\n", state);
         }
         usleep(50);
     }
@@ -561,7 +586,7 @@ bl_tui_fselect(char *dname) {
     char curdir[PATH_MAX];
 
 #ifdef __CYGWIN__
-    GetCurrentDirectory(PATH_MAX, d);
+    GetCurrentDirectory(PATH_MAX, curdir);
 #else
     getcwd(curdir, PATH_MAX);
 #endif
@@ -571,7 +596,7 @@ bl_tui_fselect(char *dname) {
         return NULL;
     } else {
         bl_io_dir_t *dir = bl_io_read_directory(".");
-        bl_tui_select_box_value_t *sb_values = (bl_tui_select_box_value_t *) malloc( 
+        bl_tui_select_box_value_t *sb_values = (bl_tui_select_box_value_t *) malloc(
             dir->n * sizeof(bl_tui_select_box_value_t) );
         for (int i=0; i<dir->n; i++) {
             sb_values[i].label = dir->dirs[i].name;
@@ -579,23 +604,23 @@ bl_tui_fselect(char *dname) {
             sb_values[i].data = &dir->dirs[i];
         }
         select_box_t *sb = bl_tui_select_box_create("Select File", sb_values, dir->n, 30, 0);
+        bl_io_dirent_t *de_copy;
         if (bl_tui_select_box(sb, 5, 5)) {
             bl_io_dirent_t *de_selected = (bl_io_dirent_t *) sb->items[sb->selected_item_index].data;
             if (de_selected == NULL) {
                 /* ESC was pressed */
-                return NULL;
+                de_copy = NULL;
             } else if (S_ISDIR(de_selected->fstatus.st_mode)) {
                 return bl_tui_fselect(de_selected->name);
             } else {
                 de_copy = (bl_io_dirent_t *) malloc(sizeof(bl_io_dirent_t));
-                de_copy->name = (char *) malloc(strlen(curdir) + 1 + strlen(de_copy->name) + 1);
+                de_copy->name = (char *) malloc(strlen(curdir) + 1 + strlen(dname) + 1 + strlen(de_selected->name) + 1);
 #ifdef __CYGWIN__
-                sprintf(fname, "%s\\%s", de_selected->name, de_copy->name);
+                sprintf(de_copy->name, "%s\\%s\\%s", curdir, dname, de_selected->name);
 #else
-                sprintf(fname, "%s/%s", de_selected->name, de_copy->name);
+                sprintf(de_copy->name, "%s/%s/%s", curdir, dname, de_selected->name);
 #endif
                 de_copy->fstatus = de_selected->fstatus;
-printf("fselect dname=%s, de_copy=%s\n", dname, de_copy->name);
             }
         } else {
             de_copy = NULL;

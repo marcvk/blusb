@@ -138,6 +138,8 @@ int bl_tui_confirm(int width, int height, char *title, char *msg, ...);
 
 int bl_tui_msg(int width, int height, char *title, char *msg, ...);
 
+void bl_tui_err(int is_fatal, char *msg, ...);
+
 /**
  * Enter a string in a text box, returns the string entered, or null if
  * Cancel was pressed. If a string is returned, i.e. the returned value is

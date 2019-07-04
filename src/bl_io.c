@@ -131,6 +131,5 @@ bl_io_dir_destroy(bl_io_dir_t *dir) {
 void
 bl_io_dirent_destroy(bl_io_dirent_t *dirent) {
     free(dirent->name);
-    free(dirent->path);
     return;
 }
