@@ -415,9 +415,9 @@ bl_tui_textbox(char *title, char *label, int x, int y, int width, int maxlength)
     return text;
 }
 
-select_box_t *
+bl_tui_select_box_t *
 bl_tui_select_box_create(char *title, bl_tui_select_box_value_t *items, int n, int width, int popup_width) {
-    select_box_t *sb = (select_box_t *) malloc(sizeof(select_box_t));
+    bl_tui_select_box_t *sb = (bl_tui_select_box_t *) malloc(sizeof(bl_tui_select_box_t));
     if (sb == NULL) {
         errmsg_and_abort("select_box");
     } else {
@@ -432,13 +432,13 @@ bl_tui_select_box_create(char *title, bl_tui_select_box_value_t *items, int n, i
 }
 
 void
-bl_tui_select_box_destroy(select_box_t* sb) {
+bl_tui_select_box_destroy(bl_tui_select_box_t* sb) {
     free(sb);
 }
 
 
 void
-bl_tui_select_box_draw(select_box_t *sb, int x, int y, int inversed) {
+bl_tui_select_box_draw(bl_tui_select_box_t *sb, int x, int y, int inversed) {
     bl_tui_select_box_value_t *selected_item = NULL;
 
     if (sb->selected_item_index < sb->n) {
@@ -462,7 +462,7 @@ bl_tui_select_box_draw(select_box_t *sb, int x, int y, int inversed) {
 }
 
 void
-bl_tui_select_box_redraw_list(WINDOW *win, select_box_t *sb,
+bl_tui_select_box_redraw_list(WINDOW *win, bl_tui_select_box_t *sb,
                                  int cursor_i, int item_start, int item_end) {
     werase(win);
     box(win, 0, 0);
@@ -486,7 +486,7 @@ bl_tui_select_box_redraw_list(WINDOW *win, select_box_t *sb,
 }
 
 int
-bl_tui_select_box(select_box_t *sb, int x, int y) {
+bl_tui_select_box(bl_tui_select_box_t *sb, int x, int y) {
 
     /*
      * Draw a popup box in the middle of the screen.
@@ -603,7 +603,7 @@ bl_tui_fselect(char *dname) {
             sb_values[i].is_bold = S_ISDIR(dir->dirs[i].fstatus.st_mode);
             sb_values[i].data = &dir->dirs[i];
         }
-        select_box_t *sb = bl_tui_select_box_create("Select File", sb_values, dir->n, 30, 0);
+        bl_tui_select_box_t *sb = bl_tui_select_box_create("Select File", sb_values, dir->n, 30, 0);
         bl_io_dirent_t *de_copy;
         if (bl_tui_select_box(sb, 5, 5)) {
             bl_io_dirent_t *de_selected = (bl_io_dirent_t *) sb->items[sb->selected_item_index].data;

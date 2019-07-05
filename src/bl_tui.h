@@ -62,13 +62,13 @@ typedef struct bl_tui_textbox_t {
     int maxlength;
 } bl_tui_textbox_t;
 
-typedef struct bl_tui_select_box_value_t {
+typedef struct  {
     char *label;
     int is_bold;
     void *data;
 } bl_tui_select_box_value_t;
 
-typedef struct select_box_t {
+typedef struct bl_tui_select_box_t {
     char *title;
     int n;
     int selected_item_index;
@@ -80,7 +80,7 @@ typedef struct select_box_t {
      */
     int popup_width;
     bl_tui_select_box_value_t *items;
-} select_box_t;
+} bl_tui_select_box_t;
 
 
 /**
@@ -170,9 +170,9 @@ char *bl_tui_textbox(char *title, char *label, int x, int y, int width, int maxl
  *
  * @return The select box, must be freed after used.
  */
-select_box_t *bl_tui_select_box_create(char *title, bl_tui_select_box_value_t *items, int n, int width, int popup_width);
+bl_tui_select_box_t *bl_tui_select_box_create(char *title, bl_tui_select_box_value_t *items, int n, int width, int popup_width);
 
-void bl_tui_select_box_destroy(select_box_t *sb);
+void bl_tui_select_box_destroy(bl_tui_select_box_t *sb);
 
 /**
  * Draw the select box, with the selected item inversed
@@ -183,9 +183,9 @@ void bl_tui_select_box_destroy(select_box_t *sb);
  * @param y y coordinate (row)
  * @param inversed if true draw inversed, otherwise draw normally
  */
-void bl_tui_select_box_draw(select_box_t *sb, int x, int y, int inversed);
+void bl_tui_select_box_draw(bl_tui_select_box_t *sb, int x, int y, int inversed);
 
-void bl_tui_select_box_redraw_list(WINDOW *win, select_box_t *sb,
+void bl_tui_select_box_redraw_list(WINDOW *win, bl_tui_select_box_t *sb,
                                  int cursor_i, int item_start, int item_end);
 /**
  * Show a popup at the given coordinates and select a value from the
@@ -199,7 +199,7 @@ void bl_tui_select_box_redraw_list(WINDOW *win, select_box_t *sb,
  * @return if a value was selected, returns TRUE, if ESC was pressed,
  *         return FALSE.
  */
-int bl_tui_select_box(select_box_t *sb, int x, int y);
+int bl_tui_select_box(bl_tui_select_box_t *sb, int x, int y);
 
 /**
  * Show a file selector, starting in the directory given by dname.

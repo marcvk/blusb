@@ -36,6 +36,7 @@
 #include <libusb.h>
 #include <string.h>
 #include <sys/types.h>
+#include <errno.h>
 
 #include "blusb.h"
 #include "layout.h"
@@ -161,15 +162,15 @@ static int _n_key_mappings = sizeof(bl_key_mapping) / sizeof(key_mapping_t);
 
 #define SELECT_BOX_WIDTH 8
 
-typedef select_box_t *bl_matrix_ui_t[NUMLAYERS_MAX][NUMROWS][NUMCOLS];
+typedef bl_tui_select_box_t *bl_matrix_ui_t[NUMLAYERS_MAX][NUMROWS][NUMCOLS];
 
 /*
  * Draw a matrix cell. The matrix is is turned 90 degrees, i.e. rows
  * are columns, columns are rows.
  */
 void
-draw_matrix_cell(select_box_t *sb, int x, int y, int inversed) {
-    bl_tui_select_box_draw(sb, y*(sb->width+1)+4, x+4, inversed);
+draw_matrix_cell(bl_tui_select_box_t *sb, int x, int y, int inversed) {
+    bl_tui_select_box_draw(sb, y*(sb->width+1)+4, x+2, inversed);
 }
 
 /**
@@ -237,19 +238,19 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
     init_pair(1, COLOR_RED, COLOR_BLACK);
     attron(COLOR_PAIR(1));
     for (int c=0; c<NUMCOLS; c++) {
-        mvprintw(4+c, 0, "C%0d", c);
+        mvprintw(2+c, 0, "C%0d", c);
     }
 
     /*
      * Draw layer tabs
      */
-    mvprintw(2, 0, "Layer");
+    mvprintw(0, 0, "Layer");
     attron(A_REVERSE);
     for (int i=0; i<nlayers; i++) {
         if (i == layer) {
             attron(A_BOLD);
         }
-        mvprintw(2, 6 + i*5, "  %d  ", i);
+        mvprintw(0, 6 + i*5, "  %d  ", i+1);
         attroff(A_BOLD);
     }
     attroff(A_REVERSE);
@@ -258,7 +259,7 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
      * Draw row headers (horizontally
      */
     for (int r=0; r<NUMROWS; r++) {
-        mvprintw(3, 4+r*(SELECT_BOX_WIDTH+1), "R%0d", r);
+        mvprintw(1, 4+r*(SELECT_BOX_WIDTH+1), "R%0d", r);
     }
     attroff(COLOR_PAIR(1));
 
@@ -276,7 +277,18 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
      * Footer
      */
     int maxy = getmaxy(stdscr);
-    mvprintw(maxy - 1, 0, "Enter: select key, O: Open, S: Save, W: Write to ctrl, L: Layers, Q: Quit");
+    wmove(stdscr, maxy - 1, 0);
+    printw("Enter: select key, ");
+    attron(A_UNDERLINE); printw("O"); attroff(A_UNDERLINE);
+    printw("pen, ");
+    attron(A_UNDERLINE); printw("S"); attroff(A_UNDERLINE);
+    printw("ave, ");
+    attron(A_UNDERLINE); printw("W"); attroff(A_UNDERLINE);
+    printw("rite to ctrl, ");
+    attron(A_UNDERLINE); printw("L"); attroff(A_UNDERLINE);
+    printw("ayers, ");
+    attron(A_UNDERLINE); printw("Q"); attroff(A_UNDERLINE);
+    printw("uit, Select layer: 1 - 6");
 }
 
 bl_layout_t *
@@ -311,20 +323,65 @@ bl_layout_write_to_controller(bl_layout_t *layout) {
     }
 }
 
-void
-bl_layout_manage_layers(int *layer, int *nlayers) {
+/**
+ * Get a number between 1 and 6 to store in the parameter nlayers
+ *
+ * @param nlayers Pointer to int to hold the number of variables
+ * @return FALSE if operation was cancelled, TRUE if success.
+ */
+int
+bl_layout_manage_layers(int *nlayers) {
+    char *nr_of_layers_str = bl_tui_textbox("Number of layers (1-6)", "Layers", 10, 10, 30, 2);
+    int nr_of_layers = nr_of_layers_str != NULL ? strtol(nr_of_layers_str, NULL, 10) : -1;
 
+    if (nr_of_layers == -1) {
+        return FALSE;
+    } else if (errno == EINVAL) {
+        return bl_layout_manage_layers(nlayers);
+    } else if (nr_of_layers < 1 || nr_of_layers > 6) {
+        bl_tui_err(FALSE, "Value must be an integer between 1 and 6");
+        return bl_layout_manage_layers(nlayers);
+    } else {
+        *nlayers = nr_of_layers;
+        return TRUE;
+    }
 }
 
 void
-bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer, int nlayers, bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings) {
+bl_layout_manage_layers1(int *layer, int *nlayers) {
+    /*
+     * Show number of layers, and select layer to display
+     */
+    WINDOW *win = newwin(10, 25, 10, 10);
+    box(win, 0, 0);
+    touchwin(win);
+    wrefresh(win);
+
+    bl_tui_select_box_value_t items[] = {
+        { "1", FALSE, (void *) 1 },
+        { "2", FALSE, (void *) 2 },
+        { "3", FALSE, (void *) 3 },
+        { "4", FALSE, (void *) 4 },
+        { "5", FALSE, (void *) 5 },
+        { "6", FALSE, (void *) 6 }
+    };
+    bl_tui_select_box_t *sb = bl_tui_select_box_create(NULL, items, 6, 20, 20);
+
+    bl_tui_select_box_destroy(sb);
+
+    werase(win);
+    wrefresh(win);
+    delwin(win);
+}
+
+void
+bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer, bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings) {
     int col = 0;
     int row = 0;
     int col_last = 0;
     int row_last = 0;
 
     int ch = getch();
-    int last_ch = ch;
     int redraw = FALSE;
     draw_matrix_cell(matrix[layer][row][col], col, row, TRUE);
     while (ch != 'q' && ch != 'Q') {
@@ -350,7 +407,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
         } else if (ch == KEY_LEFT && row > 0) {
             row--;
         } else if (ch == '\n' || ch == '\r') {
-            select_box_t *sb = matrix[layer][row][col];
+            bl_tui_select_box_t *sb = matrix[layer][row][col];
             bl_tui_select_box(sb, row  * (SELECT_BOX_WIDTH + 1) + 4, col + 4);
             mvprintw(1, 0, "sel=%d\n",  *((uint16_t*) sb->items[sb->selected_item_index].data));
             layout->matrix[layer][row][col] = *((uint16_t*) sb->items[sb->selected_item_index].data);
@@ -371,16 +428,15 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             bl_layout_write_to_controller(layout);
             redraw = TRUE;
         } else if (ch == 'l' || ch == 'L') {
-            bl_layout_manage_layers(&layer, &nlayers);
-        } else {
-            if (ch != last_ch) {
-                mvprintw(0, 1, "key=%d", ch);
-                last_ch = ch;
-            }
+            bl_layout_manage_layers(&layout->nlayers);
+            redraw = TRUE;
+        } else if (ch - (int)'0' >= 1 && ch - (int)'0' <= layout->nlayers) {
+            layer = ch - (int)'0' - 1;
+            redraw = TRUE;
         }
         if (redraw) {
             clear();
-            bl_layout_draw_keyboard_matrix(matrix, layer, nlayers);
+            bl_layout_draw_keyboard_matrix(matrix, layer, layout->nlayers);
             draw_matrix_cell(matrix[layer][row][col], col, row, TRUE);
             redraw = FALSE;
         }
@@ -390,7 +446,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             col_last = col;
             row_last = row;
         }
-        mvprintw(0, 0, "col: %d, row: %d, val: %u  ", col, row, layout->matrix[layer][row][col]);
+        mvprintw(0, 55, "col: %d, row: %d, val: %u  ", col, row, layout->matrix[layer][row][col]);
         refresh();
         // don't hog the cpu too much
         usleep(50);
@@ -483,8 +539,8 @@ bl_layout_configure(bl_layout_t *layout) {
         }
 
         bl_layout_init_matrix(matrix, layout, bl_key_mapping_items, _n_key_mappings+1);
-        bl_layout_draw_keyboard_matrix(matrix, 0, 2);
-        bl_layout_navigate_matrix(matrix, layout, 0, 2, bl_key_mapping_items, _n_key_mappings+1);
+        bl_layout_draw_keyboard_matrix(matrix, 0, layout->nlayers);
+        bl_layout_navigate_matrix(matrix, layout, 0, bl_key_mapping_items, _n_key_mappings+1);
         bl_tui_exit();
         bl_usb_disable_service_mode();
     }
