@@ -233,6 +233,14 @@ bl_layout_get_selected_item(int layer, int row, int col,
 void
 bl_layout_init_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout,
                       bl_tui_select_box_value_t *bl_key_mapping_items, int n_items) {
+
+    int popup_width = 0;
+    for (int i=0; i<n_items; i++) {
+        if (strlen(bl_key_mapping_items[i].label) > popup_width) {
+            popup_width = strlen(bl_key_mapping_items[i].label);
+        }
+    }
+
     /*
      * Create list boxes for each cell.
      */
@@ -240,7 +248,7 @@ bl_layout_init_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout,
         for (int r=0; r<NUMROWS; r++) {
             for (int c=0; c<NUMCOLS; c++) {
                 matrix[layer][r][c] = bl_tui_select_box_create(NULL, bl_key_mapping_items, n_items,
-                                                               SELECT_BOX_WIDTH, 2*SELECT_BOX_WIDTH);
+                                                               SELECT_BOX_WIDTH, popup_width + 2);
                 matrix[layer][r][c]->selected_item_index = bl_layout_get_selected_item(layer, r, c, layout,
                                                                                        bl_key_mapping_items, n_items);
             }
