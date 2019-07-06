@@ -288,7 +288,10 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
     attron(A_UNDERLINE); printw("L"); attroff(A_UNDERLINE);
     printw("ayers, ");
     attron(A_UNDERLINE); printw("Q"); attroff(A_UNDERLINE);
-    printw("uit, Select layer: 1 - 6");
+    printw("uit, Select layer: ");
+    attron(A_UNDERLINE); printw("1"); attroff(A_UNDERLINE);
+    printw(" - ");
+    attron(A_UNDERLINE); printw("6"); attroff(A_UNDERLINE);
 }
 
 bl_layout_t *
@@ -305,7 +308,7 @@ bl_layout_select_and_load_file() {
 
 void
 bl_layout_save_to_file(bl_layout_t *layout) {
-    char *fname = bl_tui_textbox("Save File", "Enter a name for the file", 5, 5, 20, 100);
+    char *fname = bl_tui_textbox("Save File", "Enter a name for the file", NULL, 5, 5, 20, 100);
     if (fname != NULL) {
         if (bl_layout_save(layout, fname) == 0) {
             bl_tui_msg(20, 1, "Save File", "File saved");
@@ -330,48 +333,34 @@ bl_layout_write_to_controller(bl_layout_t *layout) {
  * @return FALSE if operation was cancelled, TRUE if success.
  */
 int
-bl_layout_manage_layers(int *nlayers) {
-    char *nr_of_layers_str = bl_tui_textbox("Number of layers (1-6)", "Layers", 10, 10, 30, 2);
+bl_layout_manage_layers(bl_layout_t *layout) {
+    /*
+     * layout->nlayers < 10, so we can use this trick
+     */
+    char value[] = { '0' + layout->nlayers };
+    char *nr_of_layers_str = bl_tui_textbox("Number of layers (1-6)", "Layers", value, 10, 10, 30, 2);
     int nr_of_layers = nr_of_layers_str != NULL ? strtol(nr_of_layers_str, NULL, 10) : -1;
 
     if (nr_of_layers == -1) {
         return FALSE;
     } else if (errno == EINVAL) {
-        return bl_layout_manage_layers(nlayers);
+        return bl_layout_manage_layers(layout);
     } else if (nr_of_layers < 1 || nr_of_layers > 6) {
         bl_tui_err(FALSE, "Value must be an integer between 1 and 6");
-        return bl_layout_manage_layers(nlayers);
+        return bl_layout_manage_layers(layout);
     } else {
-        *nlayers = nr_of_layers;
+        if (nr_of_layers < layout->nlayers) {
+            if (bl_tui_confirm(35, 5,
+                              "Deleting layers",
+                              "You are deleting %d layer(s). Are you sure?",
+                              layout->nlayers - nr_of_layers)) {
+                layout->nlayers = nr_of_layers;
+            }
+        } else {
+            layout->nlayers = nr_of_layers;
+        }
         return TRUE;
     }
-}
-
-void
-bl_layout_manage_layers1(int *layer, int *nlayers) {
-    /*
-     * Show number of layers, and select layer to display
-     */
-    WINDOW *win = newwin(10, 25, 10, 10);
-    box(win, 0, 0);
-    touchwin(win);
-    wrefresh(win);
-
-    bl_tui_select_box_value_t items[] = {
-        { "1", FALSE, (void *) 1 },
-        { "2", FALSE, (void *) 2 },
-        { "3", FALSE, (void *) 3 },
-        { "4", FALSE, (void *) 4 },
-        { "5", FALSE, (void *) 5 },
-        { "6", FALSE, (void *) 6 }
-    };
-    bl_tui_select_box_t *sb = bl_tui_select_box_create(NULL, items, 6, 20, 20);
-
-    bl_tui_select_box_destroy(sb);
-
-    werase(win);
-    wrefresh(win);
-    delwin(win);
 }
 
 void
@@ -428,7 +417,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             bl_layout_write_to_controller(layout);
             redraw = TRUE;
         } else if (ch == 'l' || ch == 'L') {
-            bl_layout_manage_layers(&layout->nlayers);
+            bl_layout_manage_layers(layout);
             redraw = TRUE;
         } else if (ch - (int)'0' >= 1 && ch - (int)'0' <= layout->nlayers) {
             layer = ch - (int)'0' - 1;

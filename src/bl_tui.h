@@ -93,7 +93,7 @@ void bl_tui_exit();
  */
 int bl_tui_init();
 
-bl_tui_textbox_t *bl_tui_textbox_create(WINDOW *parent_win, char *label, int x, int y, int width, int maxlength);
+bl_tui_textbox_t *bl_tui_textbox_create(WINDOW *parent_win, char *label, char *value, int x, int y, int width, int maxlength);
 
 void bl_tui_textbox_destroy(bl_tui_textbox_t *textbox);
 
@@ -147,6 +147,7 @@ void bl_tui_err(int is_fatal, char *msg, ...);
  *
  * @param title Title for the popup
  * @param label Label text for the input field
+ * @param value Initial value, ignored if NULL
  * @param x x coordinate
  * @param y y coordinate
  * @param width width of the text input box (i.e. the visible part of the string)
@@ -156,7 +157,7 @@ void bl_tui_err(int is_fatal, char *msg, ...);
  *         ESC was pressed return NULL.
  *         If a string is returned it must be freed after use.
  */
-char *bl_tui_textbox(char *title, char *label, int x, int y, int width, int maxlength);
+char *bl_tui_textbox(char *title, char *label, char *value, int x, int y, int width, int maxlength);
 
 /**
  * Create a select box and return it. The select box must be freed after use.

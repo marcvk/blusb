@@ -79,7 +79,7 @@ bl_tui_init() {
 }
 
 bl_tui_textbox_t *
-bl_tui_textbox_create(WINDOW *parent_win, char *label, int x, int y, int width, int maxlength) {
+bl_tui_textbox_create(WINDOW *parent_win, char *label, char *value, int x, int y, int width, int maxlength) {
     bl_tui_textbox_t *textbox = (bl_tui_textbox_t *) malloc( sizeof(bl_tui_textbox_t) );
     textbox->win = newwin(2, width, y, x);
     textbox->label = label;
@@ -88,6 +88,16 @@ bl_tui_textbox_create(WINDOW *parent_win, char *label, int x, int y, int width, 
     textbox->pos = 0;
     textbox->scroll = 0;
     textbox->maxlength = maxlength;
+
+    /*
+     * copy the value to the textbox and make sure it 0-terminated
+     */
+    if (value != NULL) {
+        strncpy(textbox->text, value, textbox->maxlength);
+        textbox->text[textbox->maxlength] = 0;
+        textbox->pos = strlen(textbox->text);
+    }
+
     return textbox;
 }
 
@@ -241,7 +251,7 @@ bl_tui_confirm(int width, int height, char *title, char *msg, ...) {
     va_list varglist;
 
     va_start(varglist, msg);
-    int ret = bl_tui_confirm_or_msg(width, height, TRUE, title, msg, varglist);
+    int ret = _bl_tui_confirm_or_msg(width, height, TRUE, title, msg, varglist);
     va_end(varglist);
 
     return ret;
@@ -278,7 +288,7 @@ bl_tui_err(int is_fatal, char *msg, ...) {
 }
 
 char *
-bl_tui_textbox(char *title, char *label, int x, int y, int width, int maxlength) {
+bl_tui_textbox(char *title, char *label, char *value, int x, int y, int width, int maxlength) {
     int total_width = 1 + strlen(label) + 3 + width + 1;
     WINDOW *win = newwin(7, total_width, y, x);
     box(win, 0, 0);
@@ -293,7 +303,7 @@ bl_tui_textbox(char *title, char *label, int x, int y, int width, int maxlength)
     int selected = 0;
     int old_selected = -1;
 
-    bl_tui_textbox_t *textbox = bl_tui_textbox_create(win, label, x+1, y+1, total_width-2, maxlength);
+    bl_tui_textbox_t *textbox = bl_tui_textbox_create(win, label, value, x+1, y+1, total_width-2, maxlength);
     mvwprintw(textbox->win, 0, 0, "%s: %s", textbox->label, textbox->text);
     wrefresh(textbox->win);
 
