@@ -329,11 +329,13 @@ bl_layout_write_to_controller(bl_layout_t *layout) {
 /**
  * Get a number between 1 and 6 to store in the parameter nlayers
  *
- * @param nlayers Pointer to int to hold the number of variables
+ * @param layout Layout to be modified
+ * @param layer Pointer to int holding the currently selected layer. This will be adjusted if it
+ *              falls out of range after choosing a new number of layers.
  * @return FALSE if operation was cancelled, TRUE if success.
  */
 int
-bl_layout_manage_layers(bl_layout_t *layout) {
+bl_layout_manage_layers(bl_layout_t *layout, int *layer) {
     /*
      * layout->nlayers < 10, so we can use this trick
      */
@@ -344,10 +346,10 @@ bl_layout_manage_layers(bl_layout_t *layout) {
     if (nr_of_layers == -1) {
         return FALSE;
     } else if (errno == EINVAL) {
-        return bl_layout_manage_layers(layout);
+        return bl_layout_manage_layers(layout, layer);
     } else if (nr_of_layers < 1 || nr_of_layers > 6) {
         bl_tui_err(FALSE, "Value must be an integer between 1 and 6");
-        return bl_layout_manage_layers(layout);
+        return bl_layout_manage_layers(layout, layer);
     } else {
         if (nr_of_layers < layout->nlayers) {
             if (bl_tui_confirm(35, 5,
@@ -355,6 +357,9 @@ bl_layout_manage_layers(bl_layout_t *layout) {
                               "You are deleting %d layer(s). Are you sure?",
                               layout->nlayers - nr_of_layers)) {
                 layout->nlayers = nr_of_layers;
+                if (*layer + 1 > layout->nlayers) {
+                    *layer = layout->nlayers - 1;
+                }
             }
         } else {
             layout->nlayers = nr_of_layers;
@@ -417,7 +422,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             bl_layout_write_to_controller(layout);
             redraw = TRUE;
         } else if (ch == 'l' || ch == 'L') {
-            bl_layout_manage_layers(layout);
+            bl_layout_manage_layers(layout, &layer);
             redraw = TRUE;
         } else if (ch - (int)'0' >= 1 && ch - (int)'0' <= layout->nlayers) {
             layer = ch - (int)'0' - 1;
