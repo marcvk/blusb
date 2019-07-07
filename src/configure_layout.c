@@ -495,22 +495,6 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
 }
 
 /**
- * Initialize all layers to 0
- *
- * @param layout Layout data
- */
-void
-bl_layout_init_layout(bl_layout_t *layout) {
-    for (int layer=0; layer < NUMLAYERS_MAX; layer++) {
-        for (int row=0; row<NUMROWS; row++) {
-            for (int col=0; col<NUMCOLS; col++) {
-                layout->matrix[layer][row][col] = 0;
-            }
-        }
-    }
-}
-
-/**
  * Read the existing keyboard layout and return it.
  *
  * @param layout A bl_layout_t variable which will be initialised with the values

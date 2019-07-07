@@ -80,6 +80,7 @@ uint8_t *bl_layout_convert(bl_layout_t *);
 bl_layout_t *bl_layout_load_file(char *);
 bl_layout_t *bl_layout_create(int);
 void bl_layout_destroy(bl_layout_t *);
+void bl_layout_init_layout(bl_layout_t *);
 
 
 #endif /* __USB_H_ */

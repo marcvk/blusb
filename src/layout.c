@@ -80,6 +80,7 @@ bl_layout_t *
 bl_layout_create(int nlayers) {
     bl_layout_t *layout = (bl_layout_t *) malloc( sizeof(bl_layout_t) );
     layout->nlayers = nlayers;
+    bl_layout_init_layout(layout);
 
     return layout;
 }
@@ -91,14 +92,27 @@ bl_layout_destroy(bl_layout_t *layout) {
 }
 
 /**
+ * Initialize all layers to 0
+ *
+ * @param layout Layout data
+ */
+void
+bl_layout_init_layout(bl_layout_t *layout) {
+    for (int layer=0; layer < NUMLAYERS_MAX; layer++) {
+        for (int row=0; row<NUMROWS; row++) {
+            for (int col=0; col<NUMCOLS; col++) {
+                layout->matrix[layer][row][col] = 0;
+            }
+        }
+    }
+}
+
+/**
  * Parse the file and return a layout struct. The memory for the layout is allocated and
  * must be freed after use.
  */
 bl_layout_t*
 bl_layout_load_file(char *fname) {
-//char curdir[PATH_MAX];
-//sprintf(curdir, "C:\\Users\\Marc van Kempen\\Documents\\src\\blusb\\build\\%s", fname);
-//sprintf(curdir, "C:\\Users\\Marc van Kempen\\Documents\\src\\blusb\\build\\..\\layouts\\ibm_model_m_blusb_universal_iso.bin");
     FILE *f = fopen(fname, "r");
     if (f == NULL) {
         bl_tui_err(FALSE, "Could not open file %s\n", fname);
