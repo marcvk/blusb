@@ -31,6 +31,10 @@
 #include <unistd.h>
 #include <stdarg.h>
 
+#ifdef __APPLE__
+#include <sys/syslimits.h>
+#endif
+
 #ifdef __CYGWIN__
 #include <windows.h>
 #endif
