@@ -383,6 +383,14 @@ bl_layout_write_to_controller(bl_layout_t *layout) {
  */
 int
 bl_layout_manage_layers(bl_layout_t *layout, int *layer) {
+
+    /*
+     * CYGWIN hack!!! Apparently after opening a file errno is set to EINVAL
+     * force it to 0 for now.
+     * TODO see if another call causes this error, and it is actually legitimate.
+     */
+    errno=0;
+
     /*
      * layout->nlayers < 10, so we can use this trick
      */
