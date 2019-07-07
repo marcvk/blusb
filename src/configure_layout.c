@@ -209,7 +209,7 @@ typedef bl_tui_select_box_t *bl_matrix_ui_t[NUMLAYERS_MAX][NUMROWS][NUMCOLS];
  */
 void
 draw_matrix_cell(bl_tui_select_box_t *sb, int x, int y, int inversed) {
-    bl_tui_select_box_draw(sb, y*(sb->width+1)+4, x+2, inversed);
+    bl_tui_select_box_draw(sb, y*(sb->width+1)+4, x+3, inversed);
 }
 
 /**
@@ -218,7 +218,7 @@ draw_matrix_cell(bl_tui_select_box_t *sb, int x, int y, int inversed) {
  */
 int
 bl_layout_get_selected_item(int layer, int row, int col,
-			    bl_layout_t *layout, bl_tui_select_box_value_t *bl_key_mapping_items, int n_items) {
+                            bl_layout_t *layout, bl_tui_select_box_value_t *bl_key_mapping_items, int n_items) {
   for (int i=0; i<n_items; i++) {
     if (*((uint16_t *)bl_key_mapping_items[i].data) == layout->matrix[layer][row][col]) {
       return i;
@@ -279,34 +279,39 @@ bl_layout_init_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout,
 void
 bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
 
-    /*
-     * Draw column headers (vertically)
-     */
+    int menu_start = 0;
+    int content_start = 2;
+
+
     init_pair(1, COLOR_RED, COLOR_BLACK);
     attron(COLOR_PAIR(1));
-    for (int c=0; c<NUMCOLS; c++) {
-        mvprintw(2+c, 0, "C%0d", c);
-    }
 
     /*
      * Draw layer tabs
      */
-    mvprintw(0, 0, "Layer");
+    mvprintw(content_start, 0, "Layer");
     attron(A_REVERSE);
     for (int i=0; i<nlayers; i++) {
         if (i == layer) {
             attron(A_BOLD);
         }
-        mvprintw(0, 6 + i*5, "  %d  ", i+1);
+        mvprintw(content_start, 6 + i*5, "  %d  ", i+1);
         attroff(A_BOLD);
     }
     attroff(A_REVERSE);
 
     /*
+     * Draw column headers (vertically)
+     */
+    for (int c=0; c<NUMCOLS; c++) {
+        mvprintw(content_start + c + 1, 0, "C%0d", c);
+    }
+
+    /*
      * Draw row headers (horizontally
      */
     for (int r=0; r<NUMROWS; r++) {
-        mvprintw(1, 4+r*(SELECT_BOX_WIDTH+1), "R%0d", r);
+        mvprintw(content_start + 1, 4 + r * (SELECT_BOX_WIDTH + 1), "R%0d", r);
     }
     attroff(COLOR_PAIR(1));
 
@@ -324,8 +329,27 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
      * Footer
      */
     int maxy = getmaxy(stdscr);
-    wmove(stdscr, maxy - 1, 0);
+    int maxx = getmaxx(stdscr);
+    wmove(stdscr, maxy-1, 0);
+    attron(A_REVERSE);
+    for (int i=0; i<maxx; i++) {
+        printw(" ");
+    }
+    wmove(stdscr, maxy-1, 0);
     printw("Enter: select key, ");
+    printw("Select layer: ");
+    attron(A_UNDERLINE); printw("1"); attroff(A_UNDERLINE);
+    printw(" - ");
+    attron(A_UNDERLINE); printw("6"); attroff(A_UNDERLINE);
+
+    /*
+     * Menu
+     */
+    wmove(stdscr, menu_start, 0);
+    for (int i=0; i<maxx; i++) {
+        printw(" ");
+    }
+    wmove(stdscr, menu_start, 0);
     attron(A_UNDERLINE); printw("O"); attroff(A_UNDERLINE);
     printw("pen, ");
     attron(A_UNDERLINE); printw("S"); attroff(A_UNDERLINE);
@@ -335,10 +359,8 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
     attron(A_UNDERLINE); printw("L"); attroff(A_UNDERLINE);
     printw("ayers, ");
     attron(A_UNDERLINE); printw("Q"); attroff(A_UNDERLINE);
-    printw("uit, Select layer: ");
-    attron(A_UNDERLINE); printw("1"); attroff(A_UNDERLINE);
-    printw(" - ");
-    attron(A_UNDERLINE); printw("6"); attroff(A_UNDERLINE);
+    printw("uit");
+    attroff(A_REVERSE);
 }
 
 bl_layout_t *
@@ -429,6 +451,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
     int row = 0;
     int col_last = 0;
     int row_last = 0;
+    int maxy = getmaxy(stdscr);
 
     int ch = getch();
     int redraw = FALSE;
@@ -495,7 +518,9 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             col_last = col;
             row_last = row;
         }
-        mvprintw(0, 55, "col: %d, row: %d, val: %u  ", col, row, layout->matrix[layer][row][col]);
+        attron(A_REVERSE);
+        mvprintw(maxy-1, 55, "col: %d, row: %d, val: %u  ", col, row, layout->matrix[layer][row][col]);
+        attroff(A_REVERSE);
         refresh();
         // don't hog the cpu too much
         usleep(50);
