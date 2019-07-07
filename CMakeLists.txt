@@ -5,6 +5,7 @@ include(CMakeToolsHelpers OPTIONAL) # Used by the CMake Tools extension in VSCod
 # Options
 option(BUILD_SHARED_LIBS "Build Shared Libraries" OFF)
 option(BUILD_TESTS "Build Tests" OFF)
+option(MOCK "Use usb mockup" OFF)
 
 # Set all output to the binary directory for easy runtime linking
 # Also set the lib type
@@ -44,7 +45,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake_mo
 find_package(LibUSB REQUIRED)
 
 if(CYGWIN)
-  add_executable(blusb src/blusb.c src/usb-mock.c src/layout.c src/configure_layout.c src/bl_io.c src/bl_tui.c)
+  if (MOCK)
+    add_executable(blusb src/blusb.c src/usb-mock.c src/layout.c src/configure_layout.c src/bl_io.c src/bl_tui.c)
+  else()
+    add_executable(blusb src/blusb.c src/usb.c src/layout.c src/configure_layout.c src/bl_io.c src/bl_tui.c)
+  endif()
   add_library(pdcurses STATIC IMPORTED)
   set_property(TARGET pdcurses PROPERTY IMPORTED_LOCATION "../../PDCurses/wincon/pdcurses.a")
   target_link_libraries(blusb usb-1.0 pdcurses)
