@@ -579,8 +579,15 @@ bl_tui_select_box(bl_tui_select_box_t *sb, int x, int y) {
                 cursor_i = MAX(cursor_i - n_items, 0);
                 item_start = MAX(item_start - n_items, 0);
                 item_end = MIN(item_start + n_items, sb->n);
+            } else if (ch == KEY_HOME) {
+                cursor_i = 0;
+                item_start = 0;
+                item_end = sb->n > item_start + n_items ? item_start + n_items : sb->n;
+            } else if (ch == KEY_END) {
+                cursor_i = MAX(sb->n - 1, 0);
+                item_start = MAX(sb->n - n_items, 0);
+                item_end = MAX(sb->n, 0);
             }
-
             last_ch = ch;
             bl_tui_select_box_redraw_list(win, sb, cursor_i, item_start, item_end);
         }
