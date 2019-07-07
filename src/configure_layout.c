@@ -183,19 +183,19 @@ key_mapping_t bl_key_mapping[] = {
     { 0, "Macro 23", MACRO_23 },
     { 0, "Macro 24", MACRO_24 },
     { 0, "Layer Toggle", TYPE_TOGGLE },
-    { 0, "Layer 0", TLAYER_0 },
-    { 0, "Layer 1", TLAYER_1 },
-    { 0, "Layer 2", TLAYER_2 },
-    { 0, "Layer 3", TLAYER_3 },
-    { 0, "Layer 4", TLAYER_4 },
-    { 0, "Layer 5", TLAYER_5 },
+    { 0, "Layer 1", TLAYER_0 },
+    { 0, "Layer 2", TLAYER_1 },
+    { 0, "Layer 3", TLAYER_2 },
+    { 0, "Layer 4", TLAYER_3 },
+    { 0, "Layer 5", TLAYER_4 },
+    { 0, "Layer 6", TLAYER_5 },
     { 0, "Momentary Layer Toggle", TYPE_MOMENTARY },
-    { 0, "M Layer 0", MLAYER_0 },
-    { 0, "M Layer 1", MLAYER_1 },
-    { 0, "M Layer 2", MLAYER_2 },
-    { 0, "M Layer 3", MLAYER_3 },
-    { 0, "M Layer 4", MLAYER_4 },
-    { 0, "M Layer 5", MLAYER_5 }
+    { 0, "M Layer 1", MLAYER_0 },
+    { 0, "M Layer 2", MLAYER_1 },
+    { 0, "M Layer 3", MLAYER_2 },
+    { 0, "M Layer 4", MLAYER_3 },
+    { 0, "M Layer 5", MLAYER_4 },
+    { 0, "M Layer 6", MLAYER_5 }
 };
 static int _n_key_mappings = sizeof(bl_key_mapping) / sizeof(key_mapping_t);
 
@@ -499,22 +499,6 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
         refresh();
         // don't hog the cpu too much
         usleep(50);
-    }
-}
-
-/**
- * Initialize all layers to 0
- *
- * @param layout Layout data
- */
-void
-bl_layout_init_layout(bl_layout_t *layout) {
-    for (int layer=0; layer < NUMLAYERS_MAX; layer++) {
-        for (int row=0; row<NUMROWS; row++) {
-            for (int col=0; col<NUMCOLS; col++) {
-                layout->matrix[layer][row][col] = 0;
-            }
-        }
     }
 }
 
