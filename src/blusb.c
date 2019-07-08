@@ -129,6 +129,7 @@ bl_write_debounce(char *debounce) {
 void
 bl_read_macros() {
     bl_macro_t *macros = bl_usb_macro_read();
+    bl_usb_macro_print(macros);
 }
 
 void

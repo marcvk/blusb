@@ -347,6 +347,8 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
     printw("ile  ");
     attron(A_UNDERLINE); printw("L"); attroff(A_UNDERLINE);
     printw("ayers  ");
+    attron(A_UNDERLINE); printw("M"); attroff(A_UNDERLINE);
+    printw("acros  ");
     attron(A_UNDERLINE); printw("Q"); attroff(A_UNDERLINE);
     printw("uit");
     attroff(A_REVERSE);
@@ -435,6 +437,15 @@ bl_layout_manage_layers(bl_layout_t *layout, int *layer) {
 }
 
 void
+bl_layout_manage_macros() {
+    bl_macro_t *bm = bl_usb_macro_read();
+    free(bm);
+
+    bl_tui_msg(40, 1, "Manage macros", "Not implemented yet!");
+}
+
+
+void
 bl_layout_do_file_menu(bl_layout_t *layout) {
     bl_tui_select_box_value_t items[] = {
         { "Open layout file (O)", FALSE, (void*)0 },
@@ -520,6 +531,9 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             redraw = TRUE;
         } else if (ch == 'l' || ch == 'L') {
             bl_layout_manage_layers(layout, &layer);
+            redraw = TRUE;
+        } else if (ch == 'm' || ch == 'M') {
+            bl_layout_manage_macros();
             redraw = TRUE;
         } else if (ch - (int)'0' >= 1 && ch - (int)'0' <= layout->nlayers) {
             layer = ch - (int)'0' - 1;

@@ -372,27 +372,10 @@ bl_usb_debounce_write(uint8_t debounce) {
         LIBUSB_REQUEST_TYPE_VENDOR, USB_WRITE_DEBOUNCE, 0, 0, buffer, sizeof(buffer), 1000);
 }
 
-
-bl_macro_t*
-bl_usb_macro_read() {
-    unsigned char char_ctr_buf[192];
-    uint8_t bad_value1 = 0;
-    uint8_t bad_value2 = 0;
+void
+bl_usb_macro_print(bl_macro_t *bm) {
     uint8_t macro_cnt = 0;
-
-    libusb_control_transfer(handle, LIBUSB_RECIPIENT_ENDPOINT | LIBUSB_ENDPOINT_IN |
-        LIBUSB_REQUEST_TYPE_VENDOR, USB_READ_MACROS, 0, 0, char_ctr_buf, sizeof(char_ctr_buf), 1000);
-
-    for (uint8_t i = 0; i < sizeof(char_ctr_buf); i++) {
-        if (char_ctr_buf[i] == 0) bad_value1++;
-        if (char_ctr_buf[i] == 255) bad_value2++;
-    }
-
-    if (bad_value1 == sizeof(char_ctr_buf) || bad_value2 == sizeof(char_ctr_buf)) {
-        printf("Bad EEPROM value!\n");
-        exit(0);
-    }
-
+/*
     printf("Macro key table\n\n");
     printf("            Mods%-3cRsvd%-3cKey1%-3cKey2%-3cKey3%-3cKey4%-3cKey5%-3cKey6\n\n", '\0', '\0', '\0', '\0', '\0', '\0', '\0');
     printf("Macro %-6u", ++macro_cnt);
@@ -408,8 +391,45 @@ bl_usb_macro_read() {
             }
     }
     printf("\n");
+*/
 
-    return NULL;
+    printf("Macro key table\n\n");
+    printf("            Mods%-3cRsvd%-3cKey1%-3cKey2%-3cKey3%-3cKey4%-3cKey5%-3cKey6\n\n", '\0', '\0', '\0', '\0', '\0', '\0', '\0');
+
+    for (int i=0; i<NUM_MACROKEYS; i++) {
+        printf("Marco %-6u", i);
+        for (int j=0; j<LEN_MACRO; j++) {
+            printf("%-7u", bm->macros[i][j]);
+        }
+        printf("\n");
+    }
+
+}
+
+bl_macro_t*
+bl_usb_macro_read() {
+    unsigned char char_ctr_buf[192];
+    uint8_t bad_value1 = 0;
+    uint8_t bad_value2 = 0;
+
+    libusb_control_transfer(handle, LIBUSB_RECIPIENT_ENDPOINT | LIBUSB_ENDPOINT_IN |
+        LIBUSB_REQUEST_TYPE_VENDOR, USB_READ_MACROS, 0, 0, char_ctr_buf, sizeof(char_ctr_buf), 1000);
+
+    for (uint8_t i = 0; i < sizeof(char_ctr_buf); i++) {
+        if (char_ctr_buf[i] == 0) bad_value1++;
+        if (char_ctr_buf[i] == 255) bad_value2++;
+    }
+
+    if (bad_value1 == sizeof(char_ctr_buf) || bad_value2 == sizeof(char_ctr_buf)) {
+        printf("Bad EEPROM value!\n");
+        exit(0);
+    }
+
+    bl_macro_t *bm = (bl_macro_t *) malloc(sizeof(bl_macro_t));
+    bm->nmacros = 24;
+    memcpy(bm->macros, char_ctr_buf, sizeof(char_ctr_buf));
+
+    return bm;
 }
 
 void
