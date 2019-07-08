@@ -39,7 +39,7 @@ typedef struct bl_layout_t {
     bl_matrix_t matrix;
 } bl_layout_t;
 
-typedef uint16_t bl_macro_keylist_t[NUM_MACROKEYS][LEN_MACRO];
+typedef uint8_t bl_macro_keylist_t[NUM_MACROKEYS][LEN_MACRO];
 
 typedef struct bl_macro_t {
     int nmacros;
@@ -67,6 +67,11 @@ void bl_usb_debounce_write(uint8_t debounce);
 
 bl_macro_t* bl_usb_macro_read();
 void bl_usb_macro_write(bl_macro_t *macros);
+
+/*
+ * Macros
+ */
+bl_macro_t *bl_macro_parse(char *fname);
 
 /*
  * Layout

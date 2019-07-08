@@ -133,7 +133,19 @@ bl_read_macros() {
 
 void
 bl_write_macros(char *fname) {
-
+    bl_macro_t *bm = bl_macro_parse(fname);
+    if (bm != NULL) {
+        printf("%d macros found\n", bm->nmacros);
+        for (int i=0; i<bm->nmacros; i++) {
+            for (int j=0; j<LEN_MACRO && bm->macros[i][j] != 0; j++) {
+                printf("%d ", bm->macros[i][j]);
+            }
+            printf("\n");
+        }
+    } else {
+        printf("Error reading macro file\n");
+    }
+    bl_usb_macro_write(bm);
 }
 
 /*
@@ -190,20 +202,39 @@ main(int argc, char **argv) {
             BL_EXEC(bl_read_layout());
         } else if (strcmp(argv[1], "-print-layout") == 0) {
             BL_EXEC(bl_print_layout());
-        } else if (strcmp(argv[1], "-write-layout") == 0 && argc == 3) {
-            BL_EXEC(bl_write_layout(argv[2]));
+        } else if (strcmp(argv[1], "-write-layout") == 0) {
+            if (argc == 3) {
+                BL_EXEC(bl_write_layout(argv[2]));
+            } else {
+                bl_print_usage(argv);
+            }
         } else if (strcmp(argv[1], "-read-pwm") == 0) {
             BL_EXEC(bl_read_pwm());
-        } else if (strcmp(argv[1], "-write-pwm") == 0 && argc == 4) {
-            BL_EXEC(bl_write_pwm(argv[2], argv[3]));
+        } else if (strcmp(argv[1], "-write-pwm") == 0) {
+            if (argc == 4) {
+                BL_EXEC(bl_write_pwm(argv[2], argv[3]));
+            } else {
+                printf("missing parameter\n");
+                bl_print_usage(argv);
+            }
         } else if (strcmp(argv[1], "-read-debounce") == 0) {
             BL_EXEC(bl_read_debounce());
-        } else if (strcmp(argv[1], "-write-debounce") == 0 && argc == 3) {
-            BL_EXEC(bl_write_debounce(argv[2]));
+        } else if (strcmp(argv[1], "-write-debounce") == 0) {
+            if (argc == 3) {
+                BL_EXEC(bl_write_debounce(argv[2]));
+            } else {
+                printf("missing parameter\n");
+                bl_print_usage(argv);
+            }
         } else if (strcmp(argv[1], "-read-macros") == 0) {
             BL_EXEC(bl_read_macros());
-        } else if (strcmp(argv[1], "-write-macros") == 0 && argc == 3) {
-            BL_EXEC(bl_write_macros(argv[2]));
+        } else if (strcmp(argv[1], "-write-macros") == 0) {
+            if (argc == 3) {
+                BL_EXEC(bl_write_macros(argv[2]));
+            } else {
+                printf("missing parameter\n");
+                bl_print_usage(argv);
+            }
         } else if (strcmp(argv[1], "-v") == 0) {
             BL_EXEC(bl_print_version());
         } else if (strcmp(argv[1], "-h") == 0) {
@@ -215,7 +246,8 @@ main(int argc, char **argv) {
                 BL_EXEC(bl_ui());
             }
         } else {
-            BL_EXEC(bl_ui());
+            printf("unknown option\n");
+            bl_print_usage(argv);
         }
     } else {
         bl_print_usage(argv);

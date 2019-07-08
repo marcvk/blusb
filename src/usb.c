@@ -87,8 +87,7 @@ bl_usb_openctrl() {
                         "You can also give the LibUSB-win32 driver a try, whatever is going to work for you.\n"
                         "Quirky Windows(c) likes a little tinkering!\n"
                         );
-#endif
-#ifdef __linux__
+#else
                 printf("Could not open the usb device, do you have the right permissions?\n");
                 printf("You could try running with sudo.\n");
 #endif
@@ -408,7 +407,14 @@ bl_usb_macro_read() {
                 printf("Macro %-6u", ++macro_cnt);
             }
     }
+    printf("\n");
 
     return NULL;
 }
 
+void
+bl_usb_macro_write(bl_macro_t* macros)
+{
+    libusb_control_transfer(handle, LIBUSB_RECIPIENT_ENDPOINT | LIBUSB_ENDPOINT_OUT | \
+        LIBUSB_REQUEST_TYPE_VENDOR, USB_WRITE_MACROS, 0, 0, (unsigned char *) macros->macros, NUM_MACROKEYS*LEN_MACRO, 1000);
+}

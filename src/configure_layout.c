@@ -234,13 +234,6 @@ void
 bl_layout_init_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout,
                       bl_tui_select_box_value_t *bl_key_mapping_items, int n_items) {
 
-    int popup_width = 0;
-    for (int i=0; i<n_items; i++) {
-        if (strlen(bl_key_mapping_items[i].label) > popup_width) {
-            popup_width = strlen(bl_key_mapping_items[i].label);
-        }
-    }
-
     /*
      * Create list boxes for each cell.
      */
@@ -248,7 +241,7 @@ bl_layout_init_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout,
         for (int r=0; r<NUMROWS; r++) {
             for (int c=0; c<NUMCOLS; c++) {
                 matrix[layer][r][c] = bl_tui_select_box_create(NULL, bl_key_mapping_items, n_items,
-                                                               SELECT_BOX_WIDTH, popup_width + 2);
+                                                               SELECT_BOX_WIDTH, 0);
                 matrix[layer][r][c]->selected_item_index = bl_layout_get_selected_item(layer, r, c, layout,
                                                                                        bl_key_mapping_items, n_items);
             }
@@ -350,14 +343,10 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
         printw(" ");
     }
     wmove(stdscr, menu_start, 0);
-    attron(A_UNDERLINE); printw("O"); attroff(A_UNDERLINE);
-    printw("pen, ");
-    attron(A_UNDERLINE); printw("S"); attroff(A_UNDERLINE);
-    printw("ave, ");
-    attron(A_UNDERLINE); printw("W"); attroff(A_UNDERLINE);
-    printw("rite to ctrl, ");
+    attron(A_UNDERLINE); printw("F"); attroff(A_UNDERLINE);
+    printw("ile  ");
     attron(A_UNDERLINE); printw("L"); attroff(A_UNDERLINE);
-    printw("ayers, ");
+    printw("ayers  ");
     attron(A_UNDERLINE); printw("Q"); attroff(A_UNDERLINE);
     printw("uit");
     attroff(A_REVERSE);
@@ -446,6 +435,33 @@ bl_layout_manage_layers(bl_layout_t *layout, int *layer) {
 }
 
 void
+bl_layout_do_file_menu(bl_layout_t *layout) {
+    bl_tui_select_box_value_t items[] = {
+        { "Open layout file (O)", FALSE, (void*)0 },
+        { "Save layout file (S)", FALSE, (void*)1 },
+        { "Write layout to controller (W)", FALSE, (void*)2 }
+    };
+    bl_tui_select_box_t *sb = bl_tui_select_box_create(NULL, items, 3, 8, 0);
+    if (bl_tui_select_box(sb, 1, 0)) {
+        switch (sb->selected_item_index) {
+            case 0:
+                bl_layout_select_and_load_file();
+                break;
+            case 1:
+                bl_layout_save_to_file(layout);
+                break;
+            case 2:
+                bl_layout_write_to_controller(layout);
+                break;
+            default:
+                bl_tui_err(TRUE, "unsupported menu item, should not happen: %d", sb->selected_item_index);
+                break;
+        }
+    }
+}
+
+
+void
 bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer, bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings) {
     int col = 0;
     int row = 0;
@@ -484,6 +500,9 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             mvprintw(1, 0, "sel=%d\n",  *((uint16_t*) sb->items[sb->selected_item_index].data));
             layout->matrix[layer][row][col] = *((uint16_t*) sb->items[sb->selected_item_index].data);
             erase();
+            redraw = TRUE;
+        } else if (ch == 'f' || ch == 'F') {
+            bl_layout_do_file_menu(layout);
             redraw = TRUE;
         } else if (ch == 'o' || ch == 'O') {
             bl_layout_t *layout_new = bl_layout_select_and_load_file();

@@ -435,11 +435,16 @@ bl_tui_select_box_create(char *title, bl_tui_select_box_value_t *items, int n, i
     if (sb == NULL) {
         errmsg_and_abort("select_box");
     } else {
+        if (popup_width <= 0) {
+            for (int i=0; i<n; i++) {
+                popup_width = MAX(popup_width, strlen(items[i].label));
+            }
+        }
         sb->title = title;
         sb->n = n;
         sb->selected_item_index = 0;
         sb->width = width;
-        sb->popup_width = popup_width;
+        sb->popup_width = popup_width + 2;
         sb->items = items;
     }
     return sb;
