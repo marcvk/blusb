@@ -321,6 +321,13 @@ bl_tui_textbox(char *title, char *label, char *value, int x, int y, int width, i
             if (ch == '\n' || ch == '\r') {
                 // select button
                 done = TRUE;
+            } else if (ch == '\t') {
+                if (selected < n-1) {
+                    selected = selected + 1;
+                } else {
+                    bl_tui_buttons_deselect(buttons[selected]);
+                    state = IN_TEXT;
+                }
             } else if (ch == 27) {
                 selected = 1;
                 done = TRUE;
@@ -352,6 +359,10 @@ bl_tui_textbox(char *title, char *label, char *value, int x, int y, int width, i
             if (ch == '\n' || ch == '\r') {
                 // select button
                 done = TRUE;
+            } else if (ch == '\t') {
+                selected = 0;
+                bl_tui_buttons_select(buttons[selected]);
+                state = IN_BUTTONS;
             } else if (ch == 27) {
                 selected = 1;
                 done = TRUE;
@@ -514,6 +525,9 @@ bl_tui_select_box(bl_tui_select_box_t *sb, int x, int y) {
     int w = sb->popup_width;
     int h = maxy / 2 - 3;
 
+    /*
+     * Calculate width from labels if set to 0
+     */
     if (w == 0) {
         for (int i=0; i<sb->n; i++) {
             w = MAX(w, strlen(sb->items[i].label));

@@ -442,7 +442,7 @@ bl_layout_do_file_menu(bl_layout_t *layout) {
         { "Write layout to controller (W)", FALSE, (void*)2 }
     };
     bl_tui_select_box_t *sb = bl_tui_select_box_create(NULL, items, 3, 8, 0);
-    if (bl_tui_select_box(sb, 1, 0)) {
+    if (bl_tui_select_box(sb, 0, 0)) {
         switch (sb->selected_item_index) {
             case 0:
                 bl_layout_select_and_load_file();

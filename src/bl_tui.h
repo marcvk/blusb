@@ -166,7 +166,7 @@ char *bl_tui_textbox(char *title, char *label, char *value, int x, int y, int wi
  * @param items List of items to be shown in the select box.
  * @param n Number of items
  * @param width Width of the select box when drawn.
- * @param popup_width Width of the select box's popup window, if 0 the max of the
+ * @param popup_width Width of the select box's popup window, if you pass 0 the max of the
  *                    length of the labels is used.
  *
  * @return The select box, must be freed after used.
