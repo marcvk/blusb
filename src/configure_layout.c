@@ -402,10 +402,8 @@ bl_layout_manage_layers(bl_layout_t *layout, int *layer) {
      */
     errno=0;
 
-    /*
-     * layout->nlayers < 10, so we can use this trick
-     */
-    char value[] = { '0' + layout->nlayers };
+    char value[8];
+    sprintf(value, "%d", layout->nlayers);
     char *nr_of_layers_str = bl_tui_textbox("Number of layers (1-6)", "Layers", value, 10, 10, 30, 2);
     int nr_of_layers = nr_of_layers_str != NULL ? strtol(nr_of_layers_str, NULL, 10) : -1;
 
