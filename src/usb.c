@@ -438,3 +438,10 @@ bl_usb_macro_write(bl_macro_t* macros)
     libusb_control_transfer(handle, LIBUSB_RECIPIENT_ENDPOINT | LIBUSB_ENDPOINT_OUT | \
         LIBUSB_REQUEST_TYPE_VENDOR, USB_WRITE_MACROS, 0, 0, (unsigned char *) macros->macros, NUM_MACROKEYS*LEN_MACRO, 1000);
 }
+
+void
+bl_usb_set_mode(int mode) {
+    int ret = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS |
+                  LIBUSB_RECIPIENT_INTERFACE, 0xb,  mode, 0, NULL, 0, 1000);
+    printf("err=%s (%d)\n", libusb_strerror((enum libusb_error) ret), ret);
+}

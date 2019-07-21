@@ -68,6 +68,7 @@ void bl_usb_debounce_write(uint8_t debounce);
 bl_macro_t* bl_usb_macro_read();
 void bl_usb_macro_write(bl_macro_t *macros);
 void bl_usb_macro_print(bl_macro_t *bm);
+void bl_usb_set_mode(int mode);
 
 /*
  * Macros
