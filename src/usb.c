@@ -448,31 +448,31 @@ bl_usb_set_mode(int mode) {
 
 int
 bl_usb_get_mode(int mode) {
-    int rcv_buf[1];
-    int ret = libusb_control_transfer(handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE, 
+    unsigned char rcv_buf[1];
+    int ret = libusb_control_transfer(handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
                                       0x3, 0, 0, rcv_buf, 1, 1000);
     if (ret != 0) {
         bl_tui_err(FALSE, "libusb error: %s (%d)\n", libusb_strerror((enum libusb_error) ret), ret);
         return -1;
-    } else { 
+    } else {
         return rcv_buf[0];
     }
 }
 
-int 
+int
 bl_usb_set_numlock(int is_on) {
-    int ctrl_buf[2];
-    // report id 
-    ctrl_buf[0] = 1; 
-    // 1 = bit value for Numlock on 
+    unsigned char ctrl_buf[2];
+    // report id
+    ctrl_buf[0] = 1;
+    // 1 = bit value for Numlock on
     // 2 = bit value for Capslock on
-    ctrl_buf[1] = is_on ? 1 : 0; 
-    int ret = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | 
-                                      LIBUSB_RECIPIENT_INTERFACE, 0x9,  0x201, 0, ctrl_buf, 2, 1000); 
+    ctrl_buf[1] = is_on ? 1 : 0;
+    int ret = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS |
+                                      LIBUSB_RECIPIENT_INTERFACE, 0x9,  0x201, 0, ctrl_buf, 2, 1000);
     if (ret != 0) {
         bl_tui_err(FALSE, "libusb error: %s (%d)\n", libusb_strerror((enum libusb_error) ret), ret);
         return -1;
-    } else { 
+    } else {
         return 0;
     }
 }
