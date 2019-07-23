@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include "usb.h"
 #include "bl_tui.h"
@@ -95,3 +96,12 @@ bl_macro_parse(char *fname) {
     return bm;
 }
 
+int
+bl_macro_navigate() {
+    clear();
+    refresh();
+
+    usleep(1000000);
+
+    return 'q';
+}

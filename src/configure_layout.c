@@ -273,7 +273,7 @@ void
 bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
 
     int menu_start = 0;
-    int content_start = 2;
+    int content_start = 1;
 
 
     init_pair(1, COLOR_RED, COLOR_BLACK);
@@ -297,7 +297,7 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
      * Draw column headers (vertically)
      */
     for (int c=0; c<NUMCOLS; c++) {
-        mvprintw(content_start + c + 1, 0, "C%0d", c);
+        mvprintw(content_start + c + 2, 0, "C%0d", c);
     }
 
     /*
@@ -434,6 +434,20 @@ bl_layout_manage_layers(bl_layout_t *layout, int *layer) {
     }
 }
 
+static int _show_layers = TRUE;
+
+void
+bl_layout_show_layers(int show) {
+    _show_layers = show;
+}
+
+/**
+ * Display macros (24 x 8 keys) in two columns,
+ * each column is 12 lines high, and 20 characters wide.
+ *
+ * Navigate
+ *
+ */
 void
 bl_layout_manage_macros() {
     bl_macro_t *bm = bl_usb_macro_read();
@@ -467,10 +481,52 @@ bl_layout_do_file_menu(bl_layout_t *layout) {
                 break;
         }
     }
+    bl_tui_select_box_destroy(sb);
 }
 
+void
+bl_layout_do_layer_menu(bl_layout_t *layout, int *layer) {
+    bl_tui_select_box_value_t items[] = {
+        { "Show layers", FALSE, (void*)0 },
+        { "Number of layers", FALSE, (void*)1 }
+    };
+    bl_tui_select_box_t *sb = bl_tui_select_box_create(NULL, items, 2, 8, 0);
+    if (bl_tui_select_box(sb, 9, 0)) {
+        switch (sb->selected_item_index) {
+            case 0:
+                bl_layout_show_layers(TRUE);
+                break;
+            case 1:
+                bl_layout_manage_layers(layout, layer);
+                break;
+            default:
+                bl_tui_err(TRUE, "unsupported menu item, should not happen: %d", sb->selected_item_index);
+                break;
+        }
+    }
+    bl_tui_select_box_destroy(sb);
+}
 
 void
+bl_layout_do_macro_menu() {
+    bl_tui_select_box_value_t items[] = {
+        { "Show macros", FALSE, (void*)0 }
+    };
+    bl_tui_select_box_t *sb = bl_tui_select_box_create(NULL, items, 1, 8, 0);
+    if (bl_tui_select_box(sb, 18, 0)) {
+        switch (sb->selected_item_index) {
+            case 0:
+                bl_layout_show_layers(FALSE);
+                break;
+            default:
+                bl_tui_err(TRUE, "unsupported menu item, should not happen: %d", sb->selected_item_index);
+                break;
+        }
+    }
+    bl_tui_select_box_destroy(sb);
+}
+
+int
 bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer, bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings) {
     int col = 0;
     int row = 0;
@@ -481,7 +537,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
     int ch = getch();
     int redraw = FALSE;
     draw_matrix_cell(matrix[layer][row][col], col, row, TRUE);
-    while (ch != 'q' && ch != 'Q') {
+    while (ch != 'q' && ch != 'Q' && _show_layers == TRUE) {
         /*
          * See if key was pressed on the IBM model m keyboard and get
          * its position if so.
@@ -528,10 +584,10 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             bl_layout_write_to_controller(layout);
             redraw = TRUE;
         } else if (ch == 'l' || ch == 'L') {
-            bl_layout_manage_layers(layout, &layer);
+            bl_layout_do_layer_menu(layout, &layer);
             redraw = TRUE;
         } else if (ch == 'm' || ch == 'M') {
-            bl_layout_manage_macros();
+            bl_layout_do_macro_menu();
             redraw = TRUE;
         } else if (ch - (int)'0' >= 1 && ch - (int)'0' <= layout->nlayers) {
             layer = ch - (int)'0' - 1;
@@ -556,6 +612,8 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
         // don't hog the cpu too much
         usleep(50);
     }
+
+    return ch;
 }
 
 /**
@@ -611,8 +669,12 @@ bl_layout_configure(bl_layout_t *layout) {
 
         /*
          * wait until key has been released and then enable service mode.
+         * If we don't do this and you use the IBM keyboard to start the program
+         * the last key pressed will keep repeating (most likely the enter key).
+         *
          * It would be better if we could detect key up and key down
-         * events, but that doesn't work in terminal mode.
+         * events, but that doesn't work in terminal mode, so we hack around
+         * it with a short sleep.
          */
         usleep(100000);
         bl_usb_enable_service_mode();
@@ -629,7 +691,14 @@ bl_layout_configure(bl_layout_t *layout) {
 
         bl_layout_init_matrix(matrix, layout, bl_key_mapping_items, _n_key_mappings+1);
         bl_layout_draw_keyboard_matrix(matrix, 0, layout->nlayers);
-        bl_layout_navigate_matrix(matrix, layout, 0, bl_key_mapping_items, _n_key_mappings+1);
+        int ch = 0;
+        while (ch != 'q' && ch != 'Q') {
+            if (_show_layers == TRUE) {
+                ch = bl_layout_navigate_matrix(matrix, layout, 0, bl_key_mapping_items, _n_key_mappings+1);
+            } else {
+                ch = bl_macro_navigate();
+            }
+        }
         bl_tui_exit();
         bl_usb_disable_service_mode();
     }
