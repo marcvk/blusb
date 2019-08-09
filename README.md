@@ -33,6 +33,7 @@ Windows
      c:/your/dir/PDCurses
 
    cd into 'wincon' and type 'make'.
+4. Build, see the notes under Common 
 
 NB The generated binary will only work with the Windows console window. If you
 try running it in a cygwin terminal window, you'll get an error:
