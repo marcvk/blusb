@@ -34,13 +34,15 @@
 #include "blusb.h"
 #include "usb.h"
 #include "layout.h"
+#include "vkeycodes.h"
+#include "bl_ui.h"
 
 /*
  * Start the interactive text ui to configure the keyboard layout, macros, etc.
  */
 void
 bl_ui() {
-    bl_layout_configure(NULL);
+    bl_ui_loop(NULL);
 }
 
 /*
@@ -49,7 +51,7 @@ bl_ui() {
 void
 bl_ui_load_file(char *fname) {
     bl_layout_t *layout = bl_layout_load_file(fname);
-    bl_layout_configure(layout);
+    bl_ui_loop(layout);
 }
 
 /*

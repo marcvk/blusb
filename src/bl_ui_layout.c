@@ -43,12 +43,7 @@
 #include "vkeycodes.h"
 #include "usb.h"
 #include "bl_tui.h"
-
-typedef struct key_mapping_struct {
-    uint8_t vk;
-    char *name;
-    uint16_t hid;
-} key_mapping_t;
+#include "bl_ui.h"
 
 key_mapping_t bl_key_mapping[] = {
     { VK_APPS, "Win Menu", KB_APP },
@@ -197,19 +192,17 @@ key_mapping_t bl_key_mapping[] = {
     { 0, "M Layer 5", MLAYER_4 },
     { 0, "M Layer 6", MLAYER_5 }
 };
-static int _n_key_mappings = sizeof(bl_key_mapping) / sizeof(key_mapping_t);
+int _n_key_mappings = sizeof(bl_key_mapping) / sizeof(key_mapping_t);
 
-#define SELECT_BOX_WIDTH 8
 
-typedef bl_tui_select_box_t *bl_matrix_ui_t[NUMLAYERS_MAX][NUMROWS][NUMCOLS];
 
 /*
  * Draw a matrix cell. The matrix is is turned 90 degrees, i.e. rows
  * are columns, columns are rows.
  */
 void
-draw_matrix_cell(bl_tui_select_box_t *sb, int x, int y, int inversed) {
-    bl_tui_select_box_draw(sb, y*(sb->width+1)+4, x+3, inversed);
+draw_matrix_cell(WINDOW *win, bl_tui_select_box_t *sb, int x, int y, int inversed) {
+    bl_tui_select_box_draw(win, sb, y*(sb->width+1)+4, x+3, inversed);
 }
 
 /**
@@ -270,43 +263,39 @@ bl_layout_init_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout,
  * @param layer The index of the layer to draw, starts at 0.
  */
 void
-bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
-
-    int menu_start = 0;
-    int content_start = 1;
-
+bl_layout_draw_keyboard_matrix(WINDOW *content_win, bl_matrix_ui_t matrix, int layer, int nlayers) {
 
     init_pair(1, COLOR_RED, COLOR_BLACK);
-    attron(COLOR_PAIR(1));
+    wattron(content_win, COLOR_PAIR(1));
 
     /*
      * Draw layer tabs
      */
-    mvprintw(content_start, 0, "Layer");
+    mvwprintw(content_win, 0, 0, "Layer");
     attron(A_REVERSE);
     for (int i=0; i<nlayers; i++) {
         if (i == layer) {
-            attron(A_BOLD);
+            wattron(content_win, A_BOLD);
         }
-        mvprintw(content_start, 6 + i*5, "  %d  ", i+1);
-        attroff(A_BOLD);
+        mvwprintw(content_win, 0, 6 + i*5, "  %d  ", i+1);
+        wattroff(content_win, A_BOLD);
     }
-    attroff(A_REVERSE);
+    wattroff(content_win, A_REVERSE);
 
     /*
      * Draw column headers (vertically)
      */
     for (int c=0; c<NUMCOLS; c++) {
-        mvprintw(content_start + c + 2, 0, "C%0d", c);
+        mvwprintw(content_win, c + 2, 0, "C%0d", c);
     }
 
     /*
      * Draw row headers (horizontally
      */
     for (int r=0; r<NUMROWS; r++) {
-        mvprintw(content_start + 1, 4 + r * (SELECT_BOX_WIDTH + 1), "R%0d", r);
+        mvwprintw(content_win, 1, 4 + r * (SELECT_BOX_WIDTH + 1), "R%0d", r);
     }
-    attroff(COLOR_PAIR(1));
+    wattroff(content_win, COLOR_PAIR(1));
 
     /*
      * Draw the matrix, but draw the columns as rows and rows as columns, this way
@@ -314,44 +303,10 @@ bl_layout_draw_keyboard_matrix(bl_matrix_ui_t matrix, int layer, int nlayers) {
      */
     for (int c=0; c<NUMCOLS; c++) {
         for (int r=0; r<NUMROWS; r++) {
-            draw_matrix_cell(matrix[layer][r][c], c, r, FALSE);
+            draw_matrix_cell(content_win, matrix[layer][r][c], c, r, FALSE);
         }
     }
 
-    /*
-     * Footer
-     */
-    int maxy = getmaxy(stdscr);
-    int maxx = getmaxx(stdscr);
-    wmove(stdscr, maxy-1, 0);
-    attron(A_REVERSE);
-    for (int i=0; i<maxx; i++) {
-        printw(" ");
-    }
-    wmove(stdscr, maxy-1, 0);
-    printw("Enter: select key, ");
-    printw("Select layer: ");
-    attron(A_UNDERLINE); printw("1"); attroff(A_UNDERLINE);
-    printw(" - ");
-    attron(A_UNDERLINE); printw("6"); attroff(A_UNDERLINE);
-
-    /*
-     * Menu
-     */
-    wmove(stdscr, menu_start, 0);
-    for (int i=0; i<maxx; i++) {
-        printw(" ");
-    }
-    wmove(stdscr, menu_start, 0);
-    attron(A_UNDERLINE); printw("F"); attroff(A_UNDERLINE);
-    printw("ile  ");
-    attron(A_UNDERLINE); printw("L"); attroff(A_UNDERLINE);
-    printw("ayers  ");
-    attron(A_UNDERLINE); printw("M"); attroff(A_UNDERLINE);
-    printw("acros  ");
-    attron(A_UNDERLINE); printw("Q"); attroff(A_UNDERLINE);
-    printw("uit");
-    attroff(A_REVERSE);
 }
 
 bl_layout_t *
@@ -434,13 +389,6 @@ bl_layout_manage_layers(bl_layout_t *layout, int *layer) {
     }
 }
 
-static int _show_layers = TRUE;
-
-void
-bl_layout_show_layers(int show) {
-    _show_layers = show;
-}
-
 /**
  * Display macros (24 x 8 keys) in two columns,
  * each column is 12 lines high, and 20 characters wide.
@@ -456,88 +404,19 @@ bl_layout_manage_macros() {
     bl_tui_msg(40, 1, "Manage macros", "Not implemented yet!");
 }
 
-
-void
-bl_layout_do_file_menu(bl_layout_t *layout) {
-    bl_tui_select_box_value_t items[] = {
-        { "Open layout file (O)", FALSE, (void*)0 },
-        { "Save layout file (S)", FALSE, (void*)1 },
-        { "Write layout to controller (W)", FALSE, (void*)2 }
-    };
-    bl_tui_select_box_t *sb = bl_tui_select_box_create(NULL, items, 3, 8, 0);
-    if (bl_tui_select_box(sb, 0, 0)) {
-        switch (sb->selected_item_index) {
-            case 0:
-                bl_layout_select_and_load_file();
-                break;
-            case 1:
-                bl_layout_save_to_file(layout);
-                break;
-            case 2:
-                bl_layout_write_to_controller(layout);
-                break;
-            default:
-                bl_tui_err(TRUE, "unsupported menu item, should not happen: %d", sb->selected_item_index);
-                break;
-        }
-    }
-    bl_tui_select_box_destroy(sb);
-}
-
-void
-bl_layout_do_layer_menu(bl_layout_t *layout, int *layer) {
-    bl_tui_select_box_value_t items[] = {
-        { "Show layers", FALSE, (void*)0 },
-        { "Number of layers", FALSE, (void*)1 }
-    };
-    bl_tui_select_box_t *sb = bl_tui_select_box_create(NULL, items, 2, 8, 0);
-    if (bl_tui_select_box(sb, 9, 0)) {
-        switch (sb->selected_item_index) {
-            case 0:
-                bl_layout_show_layers(TRUE);
-                break;
-            case 1:
-                bl_layout_manage_layers(layout, layer);
-                break;
-            default:
-                bl_tui_err(TRUE, "unsupported menu item, should not happen: %d", sb->selected_item_index);
-                break;
-        }
-    }
-    bl_tui_select_box_destroy(sb);
-}
-
-void
-bl_layout_do_macro_menu() {
-    bl_tui_select_box_value_t items[] = {
-        { "Show macros", FALSE, (void*)0 }
-    };
-    bl_tui_select_box_t *sb = bl_tui_select_box_create(NULL, items, 1, 8, 0);
-    if (bl_tui_select_box(sb, 18, 0)) {
-        switch (sb->selected_item_index) {
-            case 0:
-                bl_layout_show_layers(FALSE);
-                break;
-            default:
-                bl_tui_err(TRUE, "unsupported menu item, should not happen: %d", sb->selected_item_index);
-                break;
-        }
-    }
-    bl_tui_select_box_destroy(sb);
-}
-
 int
-bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer, bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings) {
+bl_layout_navigate_matrix(WINDOW *win, bl_matrix_ui_t matrix, bl_layout_t *layout, int layer, bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings) {
     int col = 0;
     int row = 0;
     int col_last = 0;
     int row_last = 0;
     int maxy = getmaxy(stdscr);
 
+    int show_layers = TRUE;
     int ch = getch();
     int redraw = FALSE;
     draw_matrix_cell(matrix[layer][row][col], col, row, TRUE);
-    while (ch != 'q' && ch != 'Q' && _show_layers == TRUE) {
+    while (ch != 'q' && ch != 'Q' && show_layers) {
         /*
          * See if key was pressed on the IBM model m keyboard and get
          * its position if so.
@@ -567,7 +446,7 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             erase();
             redraw = TRUE;
         } else if (ch == 'f' || ch == 'F') {
-            bl_layout_do_file_menu(layout);
+            bl_ui_do_file_menu(layout);
             redraw = TRUE;
         } else if (ch == 'o' || ch == 'O') {
             bl_layout_t *layout_new = bl_layout_select_and_load_file();
@@ -584,10 +463,10 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
             bl_layout_write_to_controller(layout);
             redraw = TRUE;
         } else if (ch == 'l' || ch == 'L') {
-            bl_layout_do_layer_menu(layout, &layer);
+            bl_ui_do_layer_menu(layout, &layer);
             redraw = TRUE;
         } else if (ch == 'm' || ch == 'M') {
-            bl_layout_do_macro_menu();
+            bl_ui_do_macro_menu(&show_layers);
             redraw = TRUE;
         } else if (ch - (int)'0' >= 1 && ch - (int)'0' <= layout->nlayers) {
             layer = ch - (int)'0' - 1;
@@ -595,13 +474,13 @@ bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
         }
         if (redraw) {
             clear();
-            bl_layout_draw_keyboard_matrix(matrix, layer, layout->nlayers);
-            draw_matrix_cell(matrix[layer][row][col], col, row, TRUE);
+            bl_layout_draw_keyboard_matrix(win, matrix, layer, layout->nlayers);
+            draw_matrix_cell(win, matrix[layer][row][col], col, row, TRUE);
             redraw = FALSE;
         }
         if (row != row_last || col != col_last) {
-            draw_matrix_cell(matrix[layer][row_last][col_last], col_last, row_last, FALSE);
-            draw_matrix_cell(matrix[layer][row][col], col, row, TRUE);
+            draw_matrix_cell(win, [layer][row_last][col_last], col_last, row_last, FALSE);
+            draw_matrix_cell(win, matrix[layer][row][col], col, row, TRUE);
             col_last = col;
             row_last = row;
         }
@@ -641,65 +520,3 @@ bl_layout_read(bl_layout_t *layout) {
     return;
 }
 
-void
-bl_layout_configure(bl_layout_t *layout) {
-
-    bl_tui_select_box_value_t bl_key_mapping_items[_n_key_mappings + 1];
-    static int not_selected_value = 0;
-
-    /*
-     * Construct the select box list for every select box in the
-     * matrix from the list of keycodes.
-     *
-     * The select box is read only and will be shared.
-     *
-     * The first entry is for the case the mapping has (not yet) been
-     * defined.
-     */
-    bl_key_mapping_items[0].label = strdup("--");
-    bl_key_mapping_items[0].data = &not_selected_value;
-    for (int i=0; i<_n_key_mappings; i++) {
-      bl_key_mapping_items[i+1].label = bl_key_mapping[i].name;
-      bl_key_mapping_items[i+1].is_bold = FALSE;
-      bl_key_mapping_items[i+1].data = &bl_key_mapping[i].hid;
-    }
-
-    if (bl_tui_init()) {
-        bl_matrix_ui_t matrix;
-
-        /*
-         * wait until key has been released and then enable service mode.
-         * If we don't do this and you use the IBM keyboard to start the program
-         * the last key pressed will keep repeating (most likely the enter key).
-         *
-         * It would be better if we could detect key up and key down
-         * events, but that doesn't work in terminal mode, so we hack around
-         * it with a short sleep.
-         */
-        usleep(100000);
-        bl_usb_enable_service_mode();
-
-        if (layout == NULL) {
-            fprintf(stderr, "reading from controller\n");
-            layout = bl_layout_create(0);
-            bl_layout_init_layout(layout);
-            bl_layout_read(layout);
-        } else {
-            printf("using existing layout\n");
-            bl_layout_print(layout);
-        }
-
-        bl_layout_init_matrix(matrix, layout, bl_key_mapping_items, _n_key_mappings+1);
-        bl_layout_draw_keyboard_matrix(matrix, 0, layout->nlayers);
-        int ch = 0;
-        while (ch != 'q' && ch != 'Q') {
-            if (_show_layers == TRUE) {
-                ch = bl_layout_navigate_matrix(matrix, layout, 0, bl_key_mapping_items, _n_key_mappings+1);
-            } else {
-                ch = bl_macro_navigate();
-            }
-        }
-        bl_tui_exit();
-        bl_usb_disable_service_mode();
-    }
-}

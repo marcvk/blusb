@@ -28,7 +28,7 @@
  */
 
 #ifndef __MBLUSB_H_
-#define __MBLUSB_H_
+#define __MBLUSB_H_ 1
 
 #include <stdlib.h>
 #include <stdint.h>

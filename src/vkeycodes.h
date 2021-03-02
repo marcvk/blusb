@@ -1,3 +1,6 @@
+#ifndef __VKEYCODES__
+#define __VKEYCODES__ 1
+
 #ifndef _WIN32
 
 #define VK_LBUTTON		        0x01	// Left mouse button
@@ -195,3 +198,4 @@
 
 #endif
 
+#endif /* __VKEYCODES__ */

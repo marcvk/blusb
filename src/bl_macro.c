@@ -96,12 +96,3 @@ bl_macro_parse(char *fname) {
     return bm;
 }
 
-int
-bl_macro_navigate() {
-    clear();
-    refresh();
-
-    usleep(1000000);
-
-    return 'q';
-}

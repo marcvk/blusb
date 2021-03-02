@@ -1,6 +1,6 @@
 
-#ifndef __LAYOUT_H_
-#define __LAYOUT_H_
+#ifndef __LAYOUT_H__
+#define __LAYOUT_H__ 1
 
 #include <stdint.h>
 
@@ -476,4 +476,4 @@
 
 #define KB_RESERVED3 222-223
 
-#endif /* __LAYOUT_H_ */
+#endif /* __LAYOUT_H__ */

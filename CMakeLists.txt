@@ -11,9 +11,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake_mo
 find_package(LibUSB REQUIRED)
 
 if (MOCK)
-  add_executable(blusb src/blusb.c src/usb-mock.c src/layout.c src/bl_macro.c src/configure_layout.c src/bl_io.c src/bl_tui.c)
+  add_executable(blusb src/blusb.c src/usb-mock.c src/layout.c src/bl_macro.c src/bl_ui.c src/bl_ui_layout.c src/bl_ui_macro.c src/bl_io.c src/bl_tui.c)
 else()
-  add_executable(blusb src/blusb.c src/usb.c src/layout.c src/bl_macro.c src/configure_layout.c src/bl_io.c src/bl_tui.c)
+  add_executable(blusb src/blusb.c src/usb.c src/layout.c src/bl_macro.c src/bl_ui.c src/bl_ui_layout.c src/bl_ui_macro.c src/bl_io.c src/bl_tui.c)
   add_executable(test-mode src/test-mode.c src/usb.c src/bl_tui.c src/bl_io.c)
 endif()
 

@@ -468,7 +468,7 @@ bl_tui_select_box_destroy(bl_tui_select_box_t* sb) {
 
 
 void
-bl_tui_select_box_draw(bl_tui_select_box_t *sb, int x, int y, int inversed) {
+bl_tui_select_box_draw(WINDOW *win, bl_tui_select_box_t *sb, int x, int y, int inversed) {
     bl_tui_select_box_value_t *selected_item = NULL;
 
     if (sb->selected_item_index < sb->n) {
@@ -481,11 +481,11 @@ bl_tui_select_box_draw(bl_tui_select_box_t *sb, int x, int y, int inversed) {
     sprintf(template, "%%.%ds", sb->width);
 
     if (inversed) {
-        wattron(stdscr, A_REVERSE);
+        wattron(win, A_REVERSE);
     }
-    mvwprintw(stdscr, y, x, template, selected_item->label);
+    mvwprintw(win, y, x, template, selected_item->label);
     if (inversed) {
-        wattroff(stdscr, A_REVERSE);
+        wattroff(win, A_REVERSE);
     }
 
     free(template);

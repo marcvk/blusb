@@ -184,7 +184,7 @@ void bl_tui_select_box_destroy(bl_tui_select_box_t *sb);
  * @param y y coordinate (row)
  * @param inversed if true draw inversed, otherwise draw normally
  */
-void bl_tui_select_box_draw(bl_tui_select_box_t *sb, int x, int y, int inversed);
+void bl_tui_select_box_draw(WINDOW *win, bl_tui_select_box_t *sb, int x, int y, int inversed);
 
 void bl_tui_select_box_redraw_list(WINDOW *win, bl_tui_select_box_t *sb,
                                  int cursor_i, int item_start, int item_end);

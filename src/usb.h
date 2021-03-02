@@ -29,8 +29,8 @@
 
 #include "layout.h"
 
-#ifndef __USB_H_
-#define __USB_H_
+#ifndef __USB_H__
+#define __USB_H__ 1
 
 typedef uint16_t bl_matrix_t[NUMLAYERS_MAX][NUMROWS][NUMCOLS];
 
@@ -69,6 +69,8 @@ bl_macro_t* bl_usb_macro_read();
 void bl_usb_macro_write(bl_macro_t *macros);
 void bl_usb_macro_print(bl_macro_t *bm);
 void bl_usb_set_mode(int mode);
+int bl_usb_get_mode();
+int bl_usb_set_numlock(int is_on);
 
 /*
  * Macros
@@ -90,4 +92,4 @@ void bl_layout_destroy(bl_layout_t *);
 void bl_layout_init_layout(bl_layout_t *);
 
 
-#endif /* __USB_H_ */
+#endif /* __USB_H__ */
