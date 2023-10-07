@@ -415,7 +415,7 @@ bl_layout_navigate_matrix(WINDOW *win, bl_matrix_ui_t matrix, bl_layout_t *layou
     int show_layers = TRUE;
     int ch = getch();
     int redraw = FALSE;
-    draw_matrix_cell(matrix[layer][row][col], col, row, TRUE);
+    draw_matrix_cell(win, matrix[layer][row][col], col, row, TRUE);
     while (ch != 'q' && ch != 'Q' && show_layers) {
         /*
          * See if key was pressed on the IBM model m keyboard and get
@@ -479,7 +479,7 @@ bl_layout_navigate_matrix(WINDOW *win, bl_matrix_ui_t matrix, bl_layout_t *layou
             redraw = FALSE;
         }
         if (row != row_last || col != col_last) {
-            draw_matrix_cell(win, [layer][row_last][col_last], col_last, row_last, FALSE);
+            draw_matrix_cell(win, matrix[layer][row_last][col_last], col_last, row_last, FALSE);
             draw_matrix_cell(win, matrix[layer][row][col], col, row, TRUE);
             col_last = col;
             row_last = row;

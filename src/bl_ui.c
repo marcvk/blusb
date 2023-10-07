@@ -280,7 +280,7 @@ bl_ui_loop(bl_layout_t *layout) {
             bl_ui_menu_draw(windows.menu_win);
             if (show_layers) {
                 bl_layout_draw_keyboard_matrix(windows.content_win, matrix, 0, layout->nlayers);
-                ch = bl_layout_navigate_matrix(matrix, layout, 0, bl_key_mapping_items, _n_key_mappings+1);
+                ch = bl_layout_navigate_matrix(windows.content_win, matrix, layout, 0, bl_key_mapping_items, _n_key_mappings+1);
                 show_layers = FALSE;
             } else {
                 ch = bl_macro_navigate();

@@ -53,9 +53,13 @@ void bl_layout_read(bl_layout_t *layout);
 void bl_layout_init_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout,
                            bl_tui_select_box_value_t *bl_key_mapping_items, int n_items);
 void bl_layout_draw_keyboard_matrix(WINDOW *win, bl_matrix_ui_t matrix, int layer, int nlayers);
-int bl_layout_navigate_matrix(bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
-                              bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings);
+int bl_layout_navigate_matrix(WINDOW *win, bl_matrix_ui_t matrix, bl_layout_t *layout, int layer,
+							  bl_tui_select_box_value_t *bl_key_mapping_items, int n_key_mappings);
 
+bl_layout_t *bl_layout_select_and_load_file();
+void bl_layout_save_to_file(bl_layout_t *layout);
+void bl_layout_write_to_controller(bl_layout_t *layout);
+int bl_layout_manage_layers(bl_layout_t *layout, int *layer);
 
 int bl_macro_navigate();
 
